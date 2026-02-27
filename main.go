@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,4 +32,6 @@ func main() {
 	mux.HandleFunc("/healthz", http_handler.HealthHandler)
 	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
 	mux.HandleFunc("/snapshot", http_handler.TriggerHandlerFactory(args, metrics))
+	fmt.Printf("Started server on address %s", args.Host)
+	http.ListenAndServe(args.Host, mux)
 }

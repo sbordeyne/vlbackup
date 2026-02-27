@@ -10,6 +10,7 @@ import (
 )
 
 type Args struct {
+	Host                 string        `arg:"env" help:"The host to bind the HTTP server to" default:":8080"`
 	VictoriaLogsURL      url.URL        `arg:"env" help:"The VictoriaLogs URL" default:"http://127.0.0.1:9428"`
 	VictoriaLogsAuthKey  string        `arg:"env" help:"Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set" default:""`
 }

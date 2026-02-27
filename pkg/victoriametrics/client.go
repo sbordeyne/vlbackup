@@ -3,6 +3,7 @@ package victoriametrics
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -14,6 +15,7 @@ type Client struct {
 
 const (
 	CREATE_SNAPSHOT_PATH = "/internal/partition/snapshot/create"
+	DELETE_SNAPSHOT_PATH = "/internal/partition/snapshot/delete"
 )
 
 func NewClient(ctx context.Context, baseUrl string) (Client, error) {
@@ -30,7 +32,7 @@ func NewClient(ctx context.Context, baseUrl string) (Client, error) {
 func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, error) {
 	values := url.Values{}
 
-	values.Add("partition_prefix", partitionPrefix)
+	values.Add("p", partitionPrefix)
 	if (authKey != "") {
 		values.Add("authKey", authKey)
 	}
@@ -47,4 +49,24 @@ func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, erro
 		return nil, nil
 	}
 	return snapshotPaths, nil
+}
+
+func (c *Client) DeleteSnapshot(snapshotPath string) error {
+	values := url.Values{}
+	values.Add("path", snapshotPath)
+	fullUrl := c.url.JoinPath(DELETE_SNAPSHOT_PATH)
+	fullUrl.RawQuery = values.Encode()
+	request, err := http.NewRequestWithContext(c.ctx, "DELETE", fullUrl.String(), nil)
+	if err != nil {
+		return err
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete snapshot: %s", response.Status)
+	}
+	return nil
 }

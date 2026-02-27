@@ -23,8 +23,7 @@ Gandi's API provides a rotation endpoint at `https://api.gandi.net/v5/organizati
 
 Endpoint available on `/metrics`
 
-| **name**                           | **type**  | **labels**                     |
-| ---------------------------------- | --------- | ------------------------------ |
-| `secret_rotation_count`            | COUNTER   | handler, secret_id             |
-| `secret_rotation_duration_seconds` | HISTOGRAM | handler, secret_id             |
-| `secret_rotation_error_count`      | COUNTER   | handler, secret_id, error_type |
+| **name**                             | **type**  | **labels**        |
+| ------------------------------------ | --------- | ----------------- |
+| `vlbackup_snapshot_duration_seconds` | HISTOGRAM | snapshot, stage   |
+| `vlbackup_snapshot_count`            | COUNTER   | snapshot, success |
