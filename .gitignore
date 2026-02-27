@@ -1,0 +1,4 @@
+dist
+# Added by goreleaser init:
+dist/
+site/
