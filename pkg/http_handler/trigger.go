@@ -67,14 +67,17 @@ func copyToStorage(storageClient *storage.Client, snapshotPath string, destURL *
 		return err
 	}
 	var snapshotFileContents []byte
+	log.Infof("Reading snapshot file at %s", snapshotPath)
 	_, err = snapshotFile.Read(snapshotFileContents)
 	if err != nil {
 		return err
 	}
+	log.Infof("Uploading snapshot file %s to GCS %s", snapshotPath, destURL.String())
 	_, err = storageWriter.Write(snapshotFileContents)
 	if err != nil {
 		return err
 	}
+	log.Infof("Finished uploading snapshot file %s to GCS %s, closing storage writer", snapshotPath, destURL.String())
 	err = storageWriter.Close()
 	if err != nil {
 		return err
