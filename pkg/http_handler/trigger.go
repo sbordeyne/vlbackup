@@ -75,10 +75,6 @@ func copyToStorage(storageClient *storage.Client, snapshotPath string, destURL *
 	if err != nil {
 		return err
 	}
-	_, err = storageWriter.Flush()
-	if err != nil {
-		return err
-	}
 	err = storageWriter.Close()
 	if err != nil {
 		return err

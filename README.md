@@ -1,6 +1,6 @@
-# Secret Rotation
+# VLBackup
 
-A go worker that handles secret rotation for different providers
+A go program to handle VictoriaLogs backups to Google Cloud Storage
 
 ## Config
 
