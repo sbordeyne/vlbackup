@@ -34,6 +34,14 @@ func main() {
 	// Expose /metrics HTTP endpoint using the created custom registry.
 	r.Get("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}).ServeHTTP)
 	r.Post("/snapshot", http_handler.TriggerHandlerFactory(args, metrics))
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Post("/transfer", http_handler.TransferHandlerFactory(args, metrics))
+		r.Group(func(r chi.Router) {
+			r.Use(http_handler.BearerAuth(args.TransferAuthKey))
+			r.Post("/transfer/receive", http_handler.TransferReceiveHandlerFactory(args, metrics))
+			r.Post("/transfer/attach", http_handler.TransferAttachHandlerFactory(args, metrics))
+		})
+	})
 
 	fmt.Printf("Started server on address %s", args.Host)
 	http.ListenAndServe(args.Host, r)

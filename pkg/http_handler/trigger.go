@@ -51,9 +51,7 @@ func handleError(w http.ResponseWriter, err error, partitionPrefix string, metri
 	stack := debug.Stack()
 	fmt.Println(string(stack))
 	fmt.Printf("error: %#v\n", err)
-	fmt.Fprintf(w, "{\"error\": \"%#v\"}", err)
-
-	w.WriteHeader(statusCode)
+	writeJSON(w, statusCode, map[string]string{"error": err.Error()})
 	metrics.SnapshotCount.WithLabelValues(partitionPrefix, "false").Inc()
 }
 

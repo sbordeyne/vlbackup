@@ -13,6 +13,8 @@ type Args struct {
 	Host                 string        `arg:"env" help:"The host to bind the HTTP server to" default:":8080"`
 	VictoriaLogsURL      url.URL        `arg:"env" help:"The VictoriaLogs URL" default:"http://127.0.0.1:9428"`
 	VictoriaLogsAuthKey  string        `arg:"env" help:"Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set" default:""`
+	DataPath             string        `arg:"env" help:"Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath" default:"/data"`
+	TransferAuthKey      string        `arg:"env" help:"Optional shared bearer token for inter-vlbackup transfer endpoints" default:""`
 }
 
 func (Args) Version() string {
