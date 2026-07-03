@@ -2,3 +2,7 @@ dist
 # Added by goreleaser init:
 dist/
 site/
+
+example/victorialogs-data/
+example/fake-gcs-data/
+example/fake-logs-data/

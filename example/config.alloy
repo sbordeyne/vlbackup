@@ -1,0 +1,28 @@
+livedebugging {
+  enabled = true
+}
+
+discovery.docker "default" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "default" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.default.targets
+  labels     = {"app" = "docker"}
+  forward_to = [loki.write.victorialogs.receiver]
+}
+
+loki.process "default" {
+  stage.json {
+    values = {
+      
+    }
+  }
+}
+
+loki.write "victorialogs" {
+  endpoint {
+    url = "http://victorialogs:9428/insert/loki/api/v1/push"
+  }
+}

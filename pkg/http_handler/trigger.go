@@ -90,13 +90,6 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 	formatter := logging.NewBackendFormatter(backend, format)
 	logging.SetBackend(formatter)
 	return func (w http.ResponseWriter, r *http.Request) {
-		// Only accept POST requests
-		if (r.Method != "POST") {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte("{\"error\": \"Only POST is allowed\"}"))
-			metrics.SnapshotCount.WithLabelValues("unknown", "false").Inc()
-			return
-		}
 		startTime := time.Now()
 		body, err := parseRequestBody(r.Body)
 		if err != nil {
@@ -129,7 +122,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 			return
 		}
 		if destURL.Scheme != "gs" {
-			handleError(w, fmt.Errorf("unsupported destination URL scheme: %s, destUrl: %s", destURL.Scheme, destURL), body.PartitionPrefix, metrics, http.StatusBadRequest)
+			handleError(w, fmt.Errorf("unsupported destination URL scheme: %s, destUrl: %s", destURL.Scheme, destURL.String()), body.PartitionPrefix, metrics, http.StatusBadRequest)
 			return
 		}
 		storageClient, err := storage.NewClient(r.Context())
@@ -145,7 +138,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 				return
 			}
 			log.Infof("Deleting snapshot %s", snapshotPath)
-			err = vmClient.DeleteSnapshot(snapshotPath)
+			err = vmClient.DeleteSnapshot(snapshotPath, args.VictoriaLogsAuthKey)
 			if err != nil {
 				handleError(w, err, body.PartitionPrefix, metrics, http.StatusInternalServerError)
 				return

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/collectors/version"
@@ -12,8 +14,6 @@ import (
 	"github.com/sbordeyne/vlbackup/pkg/http_handler"
 	"github.com/sbordeyne/vlbackup/pkg/metrics"
 )
-
-
 
 func main() {
 	args := cli.GetCliArgs()
@@ -26,12 +26,15 @@ func main() {
 	)
 	metrics := metrics.New(reg)
 
+	r := chi.NewRouter()
+	r.Use(middleware.Recoverer)
+
+	r.Get("/readyz", http_handler.ReadyHandler)
+	r.Get("/healthz", http_handler.HealthHandler)
 	// Expose /metrics HTTP endpoint using the created custom registry.
-	mux := http.NewServeMux()
-	mux.HandleFunc("/readyz", http_handler.ReadyHandler)
-	mux.HandleFunc("/healthz", http_handler.HealthHandler)
-	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
-	mux.HandleFunc("/snapshot", http_handler.TriggerHandlerFactory(args, metrics))
+	r.Get("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}).ServeHTTP)
+	r.Post("/snapshot", http_handler.TriggerHandlerFactory(args, metrics))
+
 	fmt.Printf("Started server on address %s", args.Host)
-	http.ListenAndServe(args.Host, mux)
+	http.ListenAndServe(args.Host, r)
 }
