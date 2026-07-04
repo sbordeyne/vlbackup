@@ -8,11 +8,11 @@ import (
 )
 
 type Metrics struct {
-	SnapshotCount *prometheus.CounterVec
+	SnapshotCount    *prometheus.CounterVec
 	SnapshotDuration *prometheus.HistogramVec
-	TransferCount *prometheus.CounterVec
+	TransferCount    *prometheus.CounterVec
 	TransferDuration *prometheus.HistogramVec
-	TransferBytes *prometheus.CounterVec
+	TransferBytes    *prometheus.CounterVec
 }
 
 func New(reg prometheus.Registerer) *Metrics {

@@ -17,7 +17,7 @@ func makeSnapshotDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	for path, contents := range map[string]string{
-		"datadb/parts.json":                "[]",
+		"datadb/parts.json":                 "[]",
 		"datadb/18A0AD752171BFCD/index.bin": "index-data",
 	} {
 		full := filepath.Join(dir, path)

@@ -14,13 +14,13 @@ type Client struct {
 }
 
 const (
-	CREATE_SNAPSHOT_PATH = "/internal/partition/snapshot/create"
-	DELETE_SNAPSHOT_PATH = "/internal/partition/snapshot/delete"
+	CREATE_SNAPSHOT_PATH       = "/internal/partition/snapshot/create"
+	DELETE_SNAPSHOT_PATH       = "/internal/partition/snapshot/delete"
 	DELETE_STALE_SNAPSHOT_PATH = "/internal/partition/snapshot/delete_stale"
-	DETACH_PARTITION_PATH = "/internal/partition/detach"
-	ATTACH_PARTITION_PATH = "/internal/partition/attach"
-	LIST_PARTITIONS_PATH = "/internal/partition/list"
-	LIST_SNAPSHOTS_PATH = "/internal/partition/snapshot/list"
+	DETACH_PARTITION_PATH      = "/internal/partition/detach"
+	ATTACH_PARTITION_PATH      = "/internal/partition/attach"
+	LIST_PARTITIONS_PATH       = "/internal/partition/list"
+	LIST_SNAPSHOTS_PATH        = "/internal/partition/snapshot/list"
 )
 
 func NewClient(ctx context.Context, baseUrl string) (Client, error) {
@@ -37,10 +37,10 @@ func NewClient(ctx context.Context, baseUrl string) (Client, error) {
 func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, error) {
 	values := url.Values{}
 
-	if (partitionPrefix != "") {
+	if partitionPrefix != "" {
 		values.Add("partition_prefix", partitionPrefix)
 	}
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(CREATE_SNAPSHOT_PATH)
@@ -65,7 +65,7 @@ func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, erro
 func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 	values := url.Values{}
 	values.Add("path", snapshotPath)
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(DELETE_SNAPSHOT_PATH)
@@ -87,7 +87,7 @@ func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 
 func (c *Client) DeleteStaleSnapshots(authKey string) error {
 	values := url.Values{}
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(DELETE_STALE_SNAPSHOT_PATH)
@@ -110,7 +110,7 @@ func (c *Client) DeleteStaleSnapshots(authKey string) error {
 func (c *Client) DetachPartition(partitionName, authKey string) error {
 	values := url.Values{}
 	values.Add("name", partitionName)
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(DETACH_PARTITION_PATH)
@@ -133,7 +133,7 @@ func (c *Client) DetachPartition(partitionName, authKey string) error {
 func (c *Client) AttachPartition(partitionName, authKey string) error {
 	values := url.Values{}
 	values.Add("name", partitionName)
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(ATTACH_PARTITION_PATH)
@@ -154,7 +154,7 @@ func (c *Client) AttachPartition(partitionName, authKey string) error {
 }
 func (c *Client) ListPartitions(authKey string) ([]string, error) {
 	values := url.Values{}
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(LIST_PARTITIONS_PATH)
@@ -178,7 +178,7 @@ func (c *Client) ListPartitions(authKey string) ([]string, error) {
 
 func (c *Client) ListSnapshots(authKey string) ([]string, error) {
 	values := url.Values{}
-	if (authKey != "") {
+	if authKey != "" {
 		values.Add("authKey", authKey)
 	}
 	fullUrl := c.url.JoinPath(LIST_SNAPSHOTS_PATH)

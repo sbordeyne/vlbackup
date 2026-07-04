@@ -45,9 +45,9 @@ func makeSnapshotDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	for path, contents := range map[string]string{
-		"datadb/parts.json": `["18A0AD752171BFCD"]`,
+		"datadb/parts.json":                 `["18A0AD752171BFCD"]`,
 		"datadb/18A0AD752171BFCD/index.bin": "index-data",
-		"indexdb/parts.json": `[]`,
+		"indexdb/parts.json":                `[]`,
 	} {
 		full := filepath.Join(dir, path)
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -382,10 +382,10 @@ func TestTransferHandler(t *testing.T) {
 	t.Run("invalid body yields 400", func(t *testing.T) {
 		handler := TransferHandlerFactory(testArgs(t, "http://127.0.0.1:1"), newTestMetrics())
 		for name, body := range map[string]string{
-			"garbage":      "not json",
-			"missing from": `{"target_url": "http://x", "range": {}}`,
-			"bad from":     `{"target_url": "http://x", "range": {"from": "yesterday"}}`,
-			"bad target":   `{"target_url": "not-a-url", "range": {"from": "2026-07-01T00:00:00Z"}}`,
+			"garbage":       "not json",
+			"missing from":  `{"target_url": "http://x", "range": {}}`,
+			"bad from":      `{"target_url": "http://x", "range": {"from": "yesterday"}}`,
+			"bad target":    `{"target_url": "not-a-url", "range": {"from": "2026-07-01T00:00:00Z"}}`,
 			"from after to": `{"target_url": "http://x", "range": {"from": "2026-07-03T00:00:00Z", "to": "2026-07-01T00:00:00Z"}}`,
 		} {
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer", strings.NewReader(body))

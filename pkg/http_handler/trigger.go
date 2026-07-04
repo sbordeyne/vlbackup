@@ -26,10 +26,9 @@ var format = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`,
 )
 
-
 type TriggerRequestBody struct {
 	PartitionPrefix string `json:"partition_prefix"`
-	DestinationURL string `json:"destination_url"`
+	DestinationURL  string `json:"destination_url"`
 }
 
 func parseRequestBody(body io.ReadCloser) (TriggerRequestBody, error) {
@@ -45,7 +44,7 @@ func parseRequestBody(body io.ReadCloser) (TriggerRequestBody, error) {
 	}
 	err := decoder.Decode(&parsed)
 	if err != nil {
-		return parsed, err;
+		return parsed, err
 	}
 	return parsed, nil
 }
@@ -75,7 +74,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 	backend := logging.NewLogBackend(os.Stdout, "", 0)
 	formatter := logging.NewBackendFormatter(backend, format)
 	logging.SetBackend(formatter)
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 		body, err := parseRequestBody(r.Body)
 		if err != nil {

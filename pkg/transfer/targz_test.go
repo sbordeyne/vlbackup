@@ -44,9 +44,9 @@ func TestStreamExtractRoundTrip(t *testing.T) {
 	}
 
 	for path, want := range map[string][]byte{
-		"datadb/parts.json":                  []byte(`["18A0AD752171BFCD"]`),
+		"datadb/parts.json":                 []byte(`["18A0AD752171BFCD"]`),
 		"datadb/18A0AD752171BFCD/index.bin": {0x00, 0x01, 0xFF, 0xFE},
-		"indexdb/items.bin":                  bytes.Repeat([]byte("abc"), 1000),
+		"indexdb/items.bin":                 bytes.Repeat([]byte("abc"), 1000),
 	} {
 		got, err := os.ReadFile(filepath.Join(dest, path))
 		if err != nil {
