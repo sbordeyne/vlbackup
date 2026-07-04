@@ -11,6 +11,37 @@ permissions:
   contents: read
   pull-requests: write
 jobs:
+  title:
+    name: Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: thehanimo/pr-title-checker@v1.4.3
+        id: check
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pass_on_octokit_error: false
+      - name: Add comment to fix PR title
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: ${{ steps.check.outputs.success == 'false'}}
+        with:
+          header: PR Title Check
+          recreate: true
+          message: |
+            ### 🚨 PR Title Needs Formatting
+            The title of this PR needs to be formatted correctly following [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+            Please update the title to match the format `type(scope): description`. Examples:
+            * `fix(readme): fix typo in README.md`
+            * `chore(dependencies): update dependencies`
+            * `feat(feature): add new feature`
+      - name: Add comment that PR title is fixed
+        if: ${{ steps.check.outputs.success == 'true'}}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: PR Title Check
+          recreate: true
+          message: |
+            ### ✅ PR Title Formatted Correctly
+            The title of this PR has been updated to match the correct format. Thank you!
   lint:
     name: Lint
     runs-on: ubuntu-latest
