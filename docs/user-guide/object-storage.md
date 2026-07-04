@@ -1,6 +1,6 @@
 # Object Storage
 
-The `POST /snapshot` endpoint uploads each snapshot to an object store. The **destination URL scheme** selects the backend, the **URL host** is the bucket, and the **URL path** is used as a key prefix. Backends are configured entirely through environment variables.
+The `POST /v1/vlbackup/snapshot` endpoint uploads each snapshot to an object store. The **destination URL scheme** selects the backend, the **URL host** is the bucket, and the **URL path** is used as a key prefix. Backends are configured entirely through environment variables.
 
 ```text
 gs://my-bucket/some/prefix/     →  backend=gcs  bucket=my-bucket  prefix=some/prefix
@@ -19,7 +19,7 @@ Uses [Application Default Credentials](https://cloud.google.com/docs/authenticat
 | `STORAGE_EMULATOR_HOST`          | Optional `host:port` of a GCS emulator such as [fake-gcs-server](https://github.com/fsouza/fake-gcs-server). Honored natively by the SDK; used by the `example/compose.yaml` stack. |
 
 ```sh
-curl -sL -XPOST http://localhost:8080/snapshot \
+curl -sL -XPOST http://localhost:8080/v1/vlbackup/snapshot \
   -H "Content-Type: application/json" \
   -d '{"destination_url": "gs://my-bucket/vlbackup/"}'
 ```
@@ -38,7 +38,7 @@ Works with AWS S3, MinIO, Ceph RADOS Gateway, Cloudflare R2, Scaleway, and other
 | `S3_USE_SSL`            | `true`             | Whether to use TLS. Set `false` for a plaintext local MinIO.            |
 
 ```sh
-curl -sL -XPOST http://localhost:8080/snapshot \
+curl -sL -XPOST http://localhost:8080/v1/vlbackup/snapshot \
   -H "Content-Type: application/json" \
   -d '{"destination_url": "s3://my-bucket/backups/"}'
 ```

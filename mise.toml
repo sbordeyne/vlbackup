@@ -19,6 +19,8 @@ uv = "latest"
   --with mkdocs-techdocs-core
   --with mkdocs-monorepo-plugin
   --with mkdocs-awesome-nav
+  --with mkdocs-swagger-ui-tag
+  --with neoteroi-mkdocs
   --with mike>=2.2.0
   --with-executables-from mike
   """ }

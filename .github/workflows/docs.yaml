@@ -8,6 +8,7 @@ on:
       - v*
     paths:
       - docs/**
+      - openapi/**
       - properdocs.yml
       - mise.toml
       - .github/workflows/docs.yaml

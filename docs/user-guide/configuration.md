@@ -6,7 +6,8 @@ VLBackup is configured through command-line flags. Every flag also has an enviro
 
 | Flag                       | Env var                           | Default                 | Description                                                                                         |
 | -------------------------- | --------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------- |
-| `--host`                   | `VLBACKUP_HOST`                   | `:8080`                 | Address the HTTP server binds to.                                                                   |
+| `--host`                   | `VLBACKUP_HOST`                   | `:8080`                 | Address the API server binds to.                                                                    |
+| `--ops-host`               | `VLBACKUP_OPS_HOST`               | `:9090`                 | Address the health/ready/metrics server binds to.                                                   |
 | `--victoria-logs-url`      | `VLBACKUP_VICTORIA_LOGS_URL`      | `http://127.0.0.1:9428` | Base URL of the VictoriaLogs instance to snapshot/transfer.                                         |
 | `--victoria-logs-auth-key` | `VLBACKUP_VICTORIA_LOGS_AUTH_KEY` | *(empty)*               | Auth key for VictoriaLogs; set it if VL runs with `-partitionManageAuthKey`.                        |
 | `--data-path`              | `VLBACKUP_DATA_PATH`              | `/data`                 | Mount path of the VictoriaLogs data volume in this sidecar. **Must match** VL's `-storageDataPath`. |
@@ -19,10 +20,11 @@ VLBackup is configured through command-line flags. Every flag also has an enviro
 
 ```txt
 vlbackup v1.0.0
-Usage: vlbackup [--host HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
+Usage: vlbackup [--host HOST] [--ops-host OPS-HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
 
 Options:
   --host HOST            The host to bind the HTTP server to [default: :8080, env: VLBACKUP_HOST]
+  --ops-host OPS-HOST    The host to bind the health/ready/metrics server to [default: :9090, env: VLBACKUP_OPS_HOST]
   --victoria-logs-url VICTORIA-LOGS-URL
                          The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VLBACKUP_VICTORIA_LOGS_URL]
   --victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY
@@ -43,4 +45,4 @@ VictoriaLogs reports snapshot paths relative to its own `-storageDataPath`. vlba
 
 ### `--transfer-auth-key` / `VLBACKUP_TRANSFER_AUTH_KEY`
 
-Only the transfer *target* endpoints (`/api/v1/transfer/receive` and `/api/v1/transfer/attach`) are protected by this bearer token. Set the **same value** on both the source and target sidecars. When empty, the endpoints are unauthenticated — acceptable only on a trusted network. See [Partition Transfer](partition-transfer.md).
+Only the transfer *target* endpoints (`/v1/vlbackup/transfer/receive` and `/v1/vlbackup/transfer/attach`) are protected by this bearer token. Set the **same value** on both the source and target sidecars. When empty, the endpoints are unauthenticated — acceptable only on a trusted network. See [Partition Transfer](partition-transfer.md).

@@ -70,6 +70,9 @@ markdown_extensions:
 plugins:
   - search
   - awesome-nav
+  - swagger-ui-tag
+  - neoteroi.mkdocsoad:
+      use_pymdownx: true
   - git-revision-date-localized:
       enable_creation_date: true
       enable_git_follow: false

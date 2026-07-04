@@ -24,7 +24,7 @@ go test ./...
 go test ./... -short
 ```
 
-Integration tests (`pkg/objstore`, `pkg/http_handler`) start fake-gcs-server, MinIO, and VictoriaLogs containers and exercise the real code paths end to end. They call `testing.Short()` and skip when `-short` is set.
+Integration tests (`pkg/objstore`, `pkg/openapi`) start fake-gcs-server, MinIO, and VictoriaLogs containers and exercise the real code paths end to end. They call `testing.Short()` and skip when `-short` is set.
 
 ## Format & lint
 
@@ -45,7 +45,7 @@ mise run docs:build    # strict build (fails on broken links)
 mise run docs:deploy   # push to the gh-pages branch
 ```
 
-The nav is generated automatically from the `docs/` directory structure by the awesome-pages plugin — add a Markdown file under `user-guide/`, `developer/`, or `reference/` and it appears in the matching tab. Per-section titles and ordering live in each folder's `.pages` file.
+The nav is generated automatically from the `docs/` directory structure by the awesome-nav plugin — add a Markdown file under `user-guide/`, `developer/`, or `reference/` and it appears in the matching tab. Per-section titles and ordering live in each folder's `.nav.yml` file.
 
 ## Release
 

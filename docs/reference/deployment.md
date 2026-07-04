@@ -31,12 +31,15 @@ server:
         - --victoria-logs-auth-key=$(VICTORIA_LOGS_AUTH_KEY)
       ports:
         - containerPort: 8080
-          name: http-snapshot
+          name: http-api
+          protocol: TCP
+        - containerPort: 9090
+          name: http-ops
           protocol: TCP
       readinessProbe:
         httpGet:
-          path: /healthz
-          port: http
+          path: /readyz
+          port: http-ops
         initialDelaySeconds: 10
         periodSeconds: 30
         timeoutSeconds: 5
@@ -45,7 +48,7 @@ server:
       livenessProbe:
         httpGet:
           path: /healthz
-          port: http
+          port: http-ops
         initialDelaySeconds: 10
         periodSeconds: 30
         timeoutSeconds: 5
@@ -102,4 +105,4 @@ Which environment variables to inject depends on the backend (see [Object Storag
 
 ## Triggering backups and transfers
 
-vlbackup does not schedule anything itself — drive it from a Kubernetes `CronJob` (or any scheduler) that `POST`s to `/snapshot` and/or `/api/v1/transfer`. See the [HTTP API](http-api.md) and [Partition Transfer](../user-guide/partition-transfer.md).
+vlbackup does not schedule anything itself — drive it from a Kubernetes `CronJob` (or any scheduler) that `POST`s to `/v1/vlbackup/snapshot` and/or `/v1/vlbackup/transfer` on the API port. See the [HTTP API](http-api.md) and [Partition Transfer](../user-guide/partition-transfer.md).

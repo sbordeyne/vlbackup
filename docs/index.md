@@ -12,7 +12,7 @@ Both are driven by a tiny HTTP API, so a Kubernetes `CronJob` (or any scheduler)
 - Swappable object-storage backends — `gs://` (GCS) and `s3://` (AWS S3, MinIO, Ceph, R2, …), selected by the destination URL scheme.
 - Streams snapshots as `tar.gz` directly to storage; no staging to local disk.
 - Peer-to-peer partition transfer with conflict detection and crash recovery.
-- Prometheus metrics on `/metrics`, health/readiness probes.
+- Prometheus metrics and health/readiness probes on a separate ops port (`:9090`).
 - Distroless multi-arch container image (`linux/amd64`, `linux/arm64`).
 
 ## Architecture
@@ -30,8 +30,8 @@ flowchart LR
         VB -- "/internal/partition/*" --> VL
     end
 
-    CRON["CronJob / scheduler"] -- "POST /snapshot" --> VB
-    CRON -- "POST /api/v1/transfer" --> VB
+    CRON["CronJob / scheduler"] -- "POST /v1/vlbackup/snapshot" --> VB
+    CRON -- "POST /v1/vlbackup/transfer" --> VB
 
     VB -- "gs:// or s3://" --> OBJ[("Object storage")]
     VB -- "tar.gz over HTTP" --> PEER["peer vlbackup<br/>(target tier)"]
@@ -45,6 +45,7 @@ flowchart LR
 - :material-cog: **[Configuration](user-guide/configuration.md)** — CLI flags and environment variables
 - :material-cloud-upload: **[Object Storage](user-guide/object-storage.md)** — `gs://` and `s3://` backends
 - :material-api: **[HTTP API](reference/http-api.md)** — every endpoint with examples
+- :material-code-json: **[API Explorer](reference/api-explorer.md)** — interactive OpenAPI schema
 - :material-swap-horizontal: **[Partition Transfer](user-guide/partition-transfer.md)** — the two-tier mechanism
 - :material-chart-line: **[Metrics](reference/metrics.md)** — Prometheus metrics reference
 - :material-kubernetes: **[Deployment](reference/deployment.md)** — Helm sidecar and container image

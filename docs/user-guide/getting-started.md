@@ -13,12 +13,15 @@ Images are published to GitHub Container Registry for `linux/amd64` and `linux/a
 ```sh
 docker run --rm \
   -p 8080:8080 \
+  -p 9090:9090 \
   -v /path/to/victorialogs/data:/data \
   -e VLBACKUP_VICTORIA_LOGS_URL=http://victorialogs:9428 \
   ghcr.io/sbordeyne/vlbackup:latest
 ```
 
-The server binds to `:8080` by default and prints `Started server on address :8080`.
+Two listeners start: the **API** on `:8080` (`--host`) and the **ops** server —
+health, readiness and metrics — on `:9090` (`--ops-host`). It prints
+`Started API server on address :8080` and `Started ops server on address :9090`.
 
 ## Build from source
 
@@ -31,7 +34,7 @@ go build -o vlbackup ./cmd/vlbackup
 
 ## Try the local stack
 
-The repository ships an [`example/compose.yaml`](https://github.com/sbordeyne/vlbackup/blob/main/example/compose.yaml) that wires up a full playground: a [fake-gcs-server](https://github.com/fsouza/fake-gcs-server) emulator, a log generator, a source and a target VictoriaLogs, two vlbackup sidecars, and trigger containers that periodically fire `/snapshot` and `/api/v1/transfer`.
+The repository ships an [`example/compose.yaml`](https://github.com/sbordeyne/vlbackup/blob/main/example/compose.yaml) that wires up a full playground: a [fake-gcs-server](https://github.com/fsouza/fake-gcs-server) emulator, a log generator, a source and a target VictoriaLogs, two vlbackup sidecars, and trigger containers that periodically fire `/v1/vlbackup/snapshot` and `/v1/vlbackup/transfer`.
 
 ```sh
 cd example
@@ -45,7 +48,7 @@ The `vlbackup` service is pointed at the GCS emulator via `STORAGE_EMULATOR_HOST
 With vlbackup reachable on `:8080`, trigger a backup of yesterday's partition to your bucket:
 
 ```sh
-curl -sL -XPOST http://localhost:8080/snapshot \
+curl -sL -XPOST http://localhost:8080/v1/vlbackup/snapshot \
   -H "Content-Type: application/json" \
   -d '{
     "destination_url": "gs://my-bucket/vlbackup/",

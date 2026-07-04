@@ -17,15 +17,15 @@ sequenceDiagram
     participant Tgt as vlbackup (target)
     participant TgtVL as VictoriaLogs (target)
 
-    Cron->>Src: POST /api/v1/transfer
+    Cron->>Src: POST /v1/vlbackup/transfer
     loop each sealed day in range
         Src->>SrcVL: create snapshot
-        Src->>Tgt: POST /transfer/receive (tar.gz stream)
+        Src->>Tgt: POST /v1/vlbackup/transfer/receive (tar.gz stream)
         Tgt->>Tgt: extract into <data-path>/partitions/
         Tgt-->>Src: 200 OK (or 409 Conflict)
         Src->>SrcVL: delete snapshot
         Src->>SrcVL: detach partition
-        Src->>Tgt: POST /transfer/attach
+        Src->>Tgt: POST /v1/vlbackup/transfer/attach
         Tgt->>TgtVL: attach partition
     end
     Src-->>Cron: {transferred, skipped, errors}
@@ -49,7 +49,7 @@ The risky window is between **detach** (source) and **attach** (target). If the 
 
 ```sh
 curl -XPOST -H "Authorization: Bearer $TOKEN" \
-  "http://vlbackup-target:8080/api/v1/transfer/attach?partition=20260702"
+  "http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=20260702"
 ```
 
 ## Deployment requirements
@@ -59,6 +59,6 @@ curl -XPOST -H "Authorization: Bearer $TOKEN" \
 
 - VictoriaLogs must expose the `/internal/partition/*` endpoints (snapshot create/delete, attach, detach).
 - Set the same `VLBACKUP_TRANSFER_AUTH_KEY` on both sidecars so the target endpoints are authenticated.
-- Trigger transfers from a Kubernetes `CronJob` (or any scheduler) hitting `POST /api/v1/transfer` on the source.
+- Trigger transfers from a Kubernetes `CronJob` (or any scheduler) hitting `POST /v1/vlbackup/transfer` on the source.
 
-See the [HTTP API](../reference/http-api.md#post-apiv1transfer) for the request/response contract.
+See the [HTTP API](../reference/http-api.md#post-v1vlbackuptransfer) for the request/response contract.

@@ -13,10 +13,11 @@ A go program to handle VictoriaLogs backups to object storage (Google Cloud Stor
 
 ```txt
 vlbackup v1.0.0
-Usage: vlbackup [--host HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
+Usage: vlbackup [--host HOST] [--ops-host OPS-HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
 
 Options:
   --host HOST            The host to bind the HTTP server to [default: :8080, env: VLBACKUP_HOST]
+  --ops-host OPS-HOST    The host to bind the health/ready/metrics server to [default: :9090, env: VLBACKUP_OPS_HOST]
   --victoria-logs-url VICTORIA-LOGS-URL
                          The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VLBACKUP_VICTORIA_LOGS_URL]
   --victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY
@@ -31,12 +32,14 @@ Options:
 
 ## API
 
-### `POST /snapshot`
+The API is served on `--host` (default `:8080`). Health, readiness and metrics are on a separate ops server (`--ops-host`, default `:9090`). The API is schema-first: [`openapi/schema.yaml`](openapi/schema.yaml) is the source of truth, and the full reference is rendered as an interactive [API Explorer](https://sbordeyne.github.io/vlbackup/reference/api-explorer/) on the docs site.
+
+### `POST /v1/vlbackup/snapshot`
 
 Triggers a snapshot for the given partition prefix and uploads it to the given destination
 
 ```sh
-curl -sL -XPOST http://vlbackup:8080/snapshot -H "Content-Type: application/json" -d '{
+curl -sL -XPOST http://vlbackup:8080/v1/vlbackup/snapshot -H "Content-Type: application/json" -d '{
   "destination_url": "gs://my-bucket/path/to/folder",
   "partition_prefix": "20060102"
 }'
@@ -69,12 +72,12 @@ Uses Application Default Credentials.
 
 Adding another backend is a single file in `pkg/objstore` implementing the `Repository` interface and registering its URL scheme via `objstore.Register` in `init()`.
 
-### `POST /api/v1/transfer`
+### `POST /v1/vlbackup/transfer`
 
 Transfers per-day partitions from the local ("source") VictoriaLogs instance to another ("target") VictoriaLogs instance running its own vlbackup sidecar. Intended to be triggered by a Kubernetes CronJob to move sealed partitions from fast/small storage to slow/large storage.
 
 ```sh
-curl -sL -XPOST http://vlbackup-source:8080/api/v1/transfer -H "Content-Type: application/json" -d '{
+curl -sL -XPOST http://vlbackup-source:8080/v1/vlbackup/transfer -H "Content-Type: application/json" -d '{
   "target_url": "http://vlbackup-target:8080",
   "range": {
     "from": "2026-07-01T00:00:00Z",
@@ -85,7 +88,7 @@ curl -sL -XPOST http://vlbackup-source:8080/api/v1/transfer -H "Content-Type: ap
 
 - `range.from` is required, `range.to` is optional and defaults to today.
 - The range is interpreted as UTC days `[from, to)`. **Today's (active) partition is never transferred** — only sealed days strictly before today UTC are eligible.
-- For each day, the source snapshots the partition, streams it as tar.gz to the target's `/api/v1/transfer/receive`, deletes the snapshot, detaches the partition locally, then asks the target to attach it via `/api/v1/transfer/attach`.
+- For each day, the source snapshots the partition, streams it as tar.gz to the target's `/v1/vlbackup/transfer/receive`, deletes the snapshot, detaches the partition locally, then asks the target to attach it via `/v1/vlbackup/transfer/attach`.
 - If a partition already exists on the target, that day is **skipped** (source data untouched) and the transfer continues.
 - Any other error aborts the remaining days.
 
@@ -97,7 +100,20 @@ Response:
 
 Status is `200` when there are no errors, `500` otherwise (with the partial summary included).
 
-The target-side endpoints `/api/v1/transfer/receive` and `/api/v1/transfer/attach` are called by the source vlbackup, not by operators. They are protected by a shared bearer token when `VLBACKUP_TRANSFER_AUTH_KEY` is set (set the same value on both sidecars). If the source dies between detach and attach, the data is present but unattached on the target: recover with `curl -XPOST -H "Authorization: Bearer $TOKEN" http://vlbackup-target:8080/api/v1/transfer/attach?partition=YYYYMMDD`.
+The target-side endpoints `/v1/vlbackup/transfer/receive` and `/v1/vlbackup/transfer/attach` are called by the source vlbackup, not by operators. They are protected by a shared bearer token when `VLBACKUP_TRANSFER_AUTH_KEY` is set (set the same value on both sidecars). If the source dies between detach and attach, the data is present but unattached on the target: recover with `curl -XPOST -H "Authorization: Bearer $TOKEN" http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=YYYYMMDD`.
+
+### `POST /v1/vlbackup/restore`
+
+Downloads a partition snapshot from object storage, extracts it into the local data path, and attaches it to VictoriaLogs.
+
+```sh
+curl -sL -XPOST http://vlbackup:8080/v1/vlbackup/restore -H "Content-Type: application/json" -d '{
+  "source_url": "gs://my-bucket/path/to/folder",
+  "partition_prefix": "20060102"
+}'
+```
+
+Both `source_url` and `partition_prefix` are required. Returns `404` if the snapshot is missing in object storage, `409` if the partition is already attached locally.
 
 **Deployment requirements for transfers:**
 
@@ -123,12 +139,15 @@ server:
         - --victoria-logs-auth-key=$(VICTORIA_LOGS_AUTH_KEY)
       ports:
         - containerPort: 8080
-          name: http-snapshot
+          name: http-api
+          protocol: TCP
+        - containerPort: 9090
+          name: http-ops
           protocol: TCP
       readinessProbe:
         httpGet:
-          path: /healthz
-          port: http
+          path: /readyz
+          port: http-ops
         initialDelaySeconds: 10
         periodSeconds: 30
         timeoutSeconds: 5
@@ -137,7 +156,7 @@ server:
       livenessProbe:
         httpGet:
           path: /healthz
-          port: http
+          port: http-ops
         initialDelaySeconds: 10
         periodSeconds: 30
         timeoutSeconds: 5
@@ -161,7 +180,7 @@ server:
 
 ## Metrics
 
-Endpoint available on `/metrics`
+Endpoint available on `/metrics`, served by the ops server on `--ops-host` (default `:9090`).
 
 | **name**                             | **type**  | **labels**         |
 | ------------------------------------ | --------- | ------------------ |

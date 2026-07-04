@@ -3,5 +3,6 @@ title: Reference
 append_unmatched: true
 nav:
   - http-api.md
+  - api-explorer.md
   - metrics.md
   - deployment.md

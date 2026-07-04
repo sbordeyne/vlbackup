@@ -1,6 +1,6 @@
 # Metrics
 
-VLBackup exposes Prometheus metrics on `GET /metrics`, alongside the standard Go runtime and process collectors and a `vlbackup` build-info metric.
+VLBackup exposes Prometheus metrics on `GET /metrics`, served by the ops server on `--ops-host` (default `:9090`) — separate from the API port — alongside the standard Go runtime and process collectors and a `vlbackup` build-info metric.
 
 ## Application metrics
 
@@ -22,4 +22,4 @@ VLBackup exposes Prometheus metrics on `GET /metrics`, alongside the standard Go
 
 ## Scraping
 
-Point Prometheus at the sidecar's `/metrics` endpoint. When running as a Kubernetes sidecar, expose the container port (default `8080`) and add the usual scrape annotations or a `ServiceMonitor`/`PodMonitor` targeting it.
+Point Prometheus at the sidecar's `/metrics` endpoint on the ops port. When running as a Kubernetes sidecar, expose the ops container port (default `9090`) and add the usual scrape annotations or a `ServiceMonitor`/`PodMonitor` targeting it.
