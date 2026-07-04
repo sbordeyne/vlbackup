@@ -1,0 +1,59 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+    paths:
+      - "docs/**"
+      - "properdocs.yml"
+      - "mise.toml"
+      - ".github/workflows/docs.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Full history so git-revision-date-localized can read commit dates.
+          fetch-depth: 0
+
+      - name: Set up mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          install: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Make previously published versions visible to mike so it appends
+      # rather than starting the gh-pages history over.
+      - name: Fetch existing gh-pages
+        run: git fetch origin gh-pages --depth=1 || true
+
+      - name: Build (strict)
+        run: mise run docs:build
+
+      - name: Deploy versioned docs
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            mise exec -- mike deploy --push --update-aliases "$GITHUB_REF_NAME" latest
+            mise exec -- mike set-default --push latest
+          else
+            mise exec -- mike deploy --push dev
+          fi

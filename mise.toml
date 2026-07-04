@@ -1,13 +1,42 @@
 [tools]
 go = "1.26.4"
 goreleaser = "latest"
+uv = "latest"
+"pipx:properdocs"= { version = "latest", uvx_args = """
+  --with mkdocs-material
+  --with mkdocs-mermaid2-plugin
+  --with mkdocs-panzoom-plugin
+  --with mkdocs-d2-plugin
+  --with mkdocs-macros-plugin
+  --with markdown-exec
+  --with mkdocs-protobuf
+  --with mkdocs-git-revision-date-localized-plugin
+  --with mkdocs-git-authors-plugin
+  --with mkdocs-pygments
+  --with mkdocs-redirects
+  --with mkdocs-autolinks-plugin
+  --with mkdocs-techdocs-core
+  --with mkdocs-monorepo-plugin
+  --with mkdocs-awesome-nav
+  --with mike>=2.2.0
+  --with-executables-from mike
+  """ }
 
 [env]
 CGO_ENABLED = "0"
+PROJECT_NAME = "{{ config_root | basename }}"
+_.python.venv = { path = ".venv", create = true }
 
+[tasks.docs]
+run = "properdocs serve"
 
-[tasks."build:go"]
-run = "go build -o dist/vlbackup main.go"
+[tasks."docs:build"]
+run = "properdocs build --strict"
 
-[tasks."build:docker"]
-run = ""
+# Versioned docs are deployed by CI via mike. This serves the versioned
+# gh-pages site locally for previewing the version selector.
+[tasks."docs:versions"]
+run = "mike serve"
+
+[tasks.coverage]
+run = "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out"

@@ -1,0 +1,7 @@
+title: User Guide
+append_unmatched: true
+nav:
+  - getting-started.md
+  - configuration.md
+  - object-storage.md
+  - partition-transfer.md

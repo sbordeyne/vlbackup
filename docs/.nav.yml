@@ -1,0 +1,7 @@
+# Home (index.md) is intentionally omitted so it is not rendered as a tab;
+# the site logo/title still links to it. Only the three sections are tabs.
+append_unmatched: false
+nav:
+  - user-guide
+  - developer
+  - reference

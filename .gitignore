@@ -6,3 +6,6 @@ site/
 example/victorialogs-data/
 example/fake-gcs-data/
 example/fake-logs-data/
+
+# Test coverage
+coverage.out

@@ -1,0 +1,91 @@
+site_name: VLBackup
+site_description: >-
+  VictoriaLogs backup sidecar — snapshot partitions to object storage
+  (GCS or S3-compatible) and transfer partitions between VictoriaLogs instances.
+site_author: Simon Bordeyne
+site_url: https://sbordeyne.github.io/vlbackup/
+
+repo_url: https://github.com/sbordeyne/vlbackup
+repo_name: sbordeyne/vlbackup
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tabs
+    - navigation.instant
+    - navigation.tracking
+    - toc.follow
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.details
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+# Nav is generated automatically from the docs/ directory tree by the
+# awesome-nav plugin. Section titles and ordering live in each folder's
+# .nav.yml file.
+plugins:
+  - search
+  - awesome-nav
+  - git-revision-date-localized:
+      enable_creation_date: true
+      enable_git_follow: false
+      fallback_to_build_date: true
+      # Downgrade "uncommitted file" / timestamp-quirk messages to info so a
+      # strict build does not abort on freshly-added, not-yet-committed pages.
+      strict: false
+
+# Version selector (rendered by mkdocs-material, populated by mike's
+# versions.json on the gh-pages branch). Each git tag becomes a version;
+# the `latest` alias tracks the newest release.
+extra:
+  version:
+    provider: mike
+    default: latest
+    alias: true
