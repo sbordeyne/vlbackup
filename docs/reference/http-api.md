@@ -165,12 +165,20 @@ curl -sL -XPOST http://vlbackup:8080/v1/vlbackup/restore \
   -d '{"source_url": "gs://my-bucket/vlbackup/", "partition_prefix": "20260703"}'
 ```
 
-### Responses
+### Response
+
+```json
+{"partition": ["20260703"], "bytes_written": 4194304}
+```
+
+`partition` is an array (a single-element list of the restored `YYYYMMDD`); `bytes_written` is the byte count extracted to disk.
 
 | Status                      | Meaning                                                              |
 | --------------------------- | ------------------------------------------------------------------- |
-| `202 Accepted`              | Snapshot restored and attached; body `{"partition", "bytes_written"}`. |
+| `202 Accepted`              | Snapshot restored and attached.                                     |
 | `400 Bad Request`           | Malformed body or unsupported `source_url` scheme.                  |
 | `404 Not Found`             | The requested snapshot was not found in object storage.             |
 | `409 Conflict`              | The partition is already attached locally.                          |
 | `500 Internal Server Error` | Download or restore failure.                                        |
+
+The object key is resolved as `<prefix>/<partition_prefix>.tar.gz` — the same name [snapshot](#post-v1vlbackupsnapshot) uploads. The download is extracted into a temp dir and atomically renamed into `<data-path>/partitions/`, then attached to VictoriaLogs. See [Object Storage → Restoring a partition](../user-guide/object-storage.md#restoring-a-partition).
