@@ -750,6 +750,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="POST /snapshot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -760,6 +799,45 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="POST /api/v1/transfer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -892,6 +970,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="POST /snapshot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -902,6 +1019,45 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="POST /api/v1/transfer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1003,10 +1159,10 @@
 </tr>
 </tbody>
 </table>
-<p>The <code>Bearer</code> endpoints require <code>Authorization: Bearer &lt;token&gt;</code> when <code>TRANSFERAUTHKEY</code> is set (see <a href="../../user-guide/configuration/">Configuration</a>).</p>
+<p>The <code>Bearer</code> endpoints require <code>Authorization: Bearer &lt;token&gt;</code> when <code>VLBACKUP_TRANSFER_AUTH_KEY</code> is set (see <a href="../../user-guide/configuration/">Configuration</a>).</p>
 <h2 id="post-snapshot"><code>POST /snapshot</code><a class="headerlink" href="#post-snapshot" title="Permanent link">&para;</a></h2>
 <p>Snapshots the given partition and uploads it to <code>destination_url</code>.</p>
-<p><strong>Request body</strong></p>
+<h3 id="request-body">Request body<a class="headerlink" href="#request-body" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;destination_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gs://my-bucket/vlbackup/&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;partition_prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20260703&quot;</span>
@@ -1033,12 +1189,12 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Example</strong></p>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/snapshot<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;s3://my-bucket/backups/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
 </code></pre></div>
-<p><strong>Responses</strong></p>
+<h3 id="responses">Responses<a class="headerlink" href="#responses" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1068,7 +1224,7 @@
 <p>Each returned snapshot path is uploaded as <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code>, then the snapshot is deleted from VictoriaLogs.</p>
 <h2 id="post-apiv1transfer"><code>POST /api/v1/transfer</code><a class="headerlink" href="#post-apiv1transfer" title="Permanent link">&para;</a></h2>
 <p>Transfers per-day partitions from this ("source") VictoriaLogs to another ("target") instance running its own vlbackup sidecar. See <a href="../../user-guide/partition-transfer/">Partition Transfer</a> for the full mechanism.</p>
-<p><strong>Request body</strong></p>
+<h3 id="request-body_1">Request body<a class="headerlink" href="#request-body_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;target_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://vlbackup-target:8080&quot;</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;range&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1104,12 +1260,12 @@
 </tbody>
 </table>
 <p>The range is interpreted as UTC days <code>[from, to)</code>. <strong>Today's active partition is never transferred</strong> — only sealed days strictly before today UTC are eligible.</p>
-<p><strong>Example</strong></p>
+<h3 id="example_1">Example<a class="headerlink" href="#example_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup-source:8080/api/v1/transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;target_url&quot;: &quot;http://vlbackup-target:8080&quot;, &quot;range&quot;: {&quot;from&quot;: &quot;2026-07-01T00:00:00Z&quot;}}&#39;</span>
 </code></pre></div>
-<p><strong>Response</strong></p>
+<h3 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260701&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260702&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]}</span>
 </code></pre></div>
 <ul>
@@ -1119,9 +1275,9 @@
 </ul>
 <p>Status is <code>200</code> when <code>errors</code> is empty, <code>500</code> otherwise (with the partial summary included).</p>
 <h2 id="post-apiv1transferreceive-and-attach"><code>POST /api/v1/transfer/receive</code> and <code>/attach</code><a class="headerlink" href="#post-apiv1transferreceive-and-attach" title="Permanent link">&para;</a></h2>
-<p>These are the <strong>target-side</strong> endpoints, called by the source vlbackup — not by operators. They are protected by the shared bearer token when <code>TRANSFERAUTHKEY</code> is set.</p>
+<p>These are the <strong>target-side</strong> endpoints, called by the source vlbackup — not by operators. They are protected by the shared bearer token when <code>VLBACKUP_TRANSFER_AUTH_KEY</code> is set.</p>
 <ul>
-<li><code>/api/v1/transfer/receive?partition=YYYYMMDD</code> — accepts a <code>tar.gz</code> stream and extracts it under <code>&lt;DATAPATH&gt;/partitions/</code>.</li>
+<li><code>/api/v1/transfer/receive?partition=YYYYMMDD</code> — accepts a <code>tar.gz</code> stream and extracts it under <code>&lt;data-path&gt;/partitions/</code>.</li>
 <li><code>/api/v1/transfer/attach?partition=YYYYMMDD</code> — attaches the received partition in VictoriaLogs.</li>
 </ul>
 <p>If the source dies between detaching and attaching, the data is present but unattached on the target; recover manually:</p>
@@ -1173,7 +1329,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 06:19:36 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
   </span>
 
     
