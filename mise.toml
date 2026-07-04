@@ -21,6 +21,10 @@ uv = "latest"
   --with mike>=2.2.0
   --with-executables-from mike
   """ }
+markdownlint-cli2 = "latest"
+yamllint = "latest"
+"pipx:yamlfix" = "latest"
+pre-commit = "latest"
 
 [env]
 CGO_ENABLED = "0"
@@ -40,3 +44,12 @@ run = "mike serve"
 
 [tasks.coverage]
 run = "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out"
+
+[tasks."lint:md"]
+run = "markdownlint-cli2 --config .markdownlint.yaml '**/*.md'"
+
+[tasks."lint:yaml"]
+run = "yamllint --config-file=.yamllint.yaml ."
+
+[tasks."fix:yaml"]
+run = "yamlfix -c .yamlfix.toml ."

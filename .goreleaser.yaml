@@ -1,35 +1,33 @@
+---
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
-
 version: 2
-
 dockers_v2:
   - id: vlbackup
     dockerfile: Dockerfile
     ids:
       - vlbackup
     images:
-      - "ghcr.io/sbordeyne/vlbackup"
+      - ghcr.io/sbordeyne/vlbackup
     tags:
-      - "v{{ .Version }}"
-      - "latest"
+      - v{{ .Version }}
+      - latest
     annotations:
-      "org.opencontainers.image.description": "vlbackup is a tool to interact with VictoriaLog's backup and restore features."
-      "org.opencontainers.image.created": "{{.Date}}"
-      "org.opencontainers.image.title": "{{.ProjectName}}"
-      "org.opencontainers.image.revision": "{{.FullCommit}}"
-      "org.opencontainers.image.version": "{{.Version}}"
-      "org.opencontainers.image.source": "{{.GitURL}}"
-      "org.opencontainers.image.base.name": "{{.BaseImage}}"
-      "org.opencontainers.image.base.digest": "{{.BaseImageDigest}}"
+      org.opencontainers.image.description: vlbackup is a tool to interact with VictoriaLog's
+        backup and restore features.
+      org.opencontainers.image.created: '{{.Date}}'
+      org.opencontainers.image.title: '{{.ProjectName}}'
+      org.opencontainers.image.revision: '{{.FullCommit}}'
+      org.opencontainers.image.version: '{{.Version}}'
+      org.opencontainers.image.source: '{{.GitURL}}'
+      org.opencontainers.image.base.name: '{{.BaseImage}}'
+      org.opencontainers.image.base.digest: '{{.BaseImageDigest}}'
     platforms:
       - linux/amd64
       - linux/arm64
-
 before:
   hooks:
     - go mod tidy
-
 builds:
   - main: ./cmd/vlbackup/main.go
     env:
@@ -39,26 +37,22 @@ builds:
     goarch:
       - arm64
       - amd64
-
 archives:
-  - formats: [tar.gz]
+  - formats:
+      - tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-
 changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
-
+      - '^docs:'
+      - '^test:'
 release:
-  footer: >-
-
+  footer: |-
     ---
-
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

@@ -1,27 +1,26 @@
+---
 site_name: VLBackup
 site_description: >-
   VictoriaLogs backup sidecar — snapshot partitions to object storage
   (GCS or S3-compatible) and transfer partitions between VictoriaLogs instances.
 site_author: Simon Bordeyne
 site_url: https://sbordeyne.github.io/vlbackup/
-
 repo_url: https://github.com/sbordeyne/vlbackup
 repo_name: sbordeyne/vlbackup
-edit_uri: edit/main/docs/
-
+edit_uri: edit/master/docs/
 theme:
   name: material
   icon:
     repo: fontawesome/brands/github
   palette:
-    - media: "(prefers-color-scheme: light)"
+    - media: '(prefers-color-scheme: light)'
       scheme: default
       primary: indigo
       accent: indigo
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
       primary: indigo
       accent: indigo
@@ -39,7 +38,6 @@ theme:
     - content.tabs.link
     - search.suggest
     - search.highlight
-
 markdown_extensions:
   - abbr
   - admonition
@@ -66,7 +64,6 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-
 # Nav is generated automatically from the docs/ directory tree by the
 # awesome-nav plugin. Section titles and ordering live in each folder's
 # .nav.yml file.
@@ -80,7 +77,6 @@ plugins:
       # Downgrade "uncommitted file" / timestamp-quirk messages to info so a
       # strict build does not abort on freshly-added, not-yet-committed pages.
       strict: false
-
 # Version selector (rendered by mkdocs-material, populated by mike's
 # versions.json on the gh-pages branch). Each git tag becomes a version;
 # the `latest` alias tracks the newest release.

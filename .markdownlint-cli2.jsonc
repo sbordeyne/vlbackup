@@ -1,0 +1,15 @@
+{
+  "config": {
+    "default": true,
+    "MD003": { "style": "atx" },
+    "MD033": false,
+    "MD034": false,
+    "MD007": { "indent": 4 },
+    "MD060": false,
+    "MD013": false,
+    "no-hard-tabs": false,
+    "MD024": false
+  },
+  "fix": true,
+  "gitignore": true
+}

@@ -1,0 +1,53 @@
+---
+extends: default
+ignore-from-file:
+  - .gitignore
+  - .yamlignore
+yaml-files:
+  - '**/*.yml'
+  - '**/*.yaml'
+  - .yamllint
+rules:
+  anchors:
+    forbid-undeclared-aliases: true
+    forbid-duplicated-anchors: true
+    forbid-unused-anchors: true
+  braces:
+    forbid: non-empty
+  brackets:
+    forbid: false
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+  comments-indentation:
+    level: warning
+  document-start: disable
+  float-values:
+    forbid-inf: true
+    forbid-nan: true
+    forbid-scientific-notation: true
+    require-numeral-before-decimal: true
+  key-duplicates:
+    forbid-duplicated-merge-keys: true
+  line-length:
+    max: 120
+    level: warning
+    allow-non-breakable-inline-mappings: true
+    allow-non-breakable-words: true
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: false
+  quoted-strings:
+    quote-type: any
+    required: only-when-needed
+    extra-required: []
+    extra-allowed: []
+    allow-quoted-quotes: true
+    check-keys: false
+  trailing-spaces: enable
+  truthy:
+    allowed-values:
+      - 'true'
+      - 'false'
+    check-keys: false
