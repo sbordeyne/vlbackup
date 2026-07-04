@@ -27,6 +27,7 @@ yamllint = "latest"
 pre-commit = "latest"
 tombi = "latest"
 golangci-lint = "v2.12.2"
+"go:github.com/vladopajic/go-test-coverage/v2" = "v2.18.8"
 
 [env]
 CGO_ENABLED = "0"

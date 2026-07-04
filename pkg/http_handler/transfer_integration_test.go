@@ -58,6 +58,13 @@ func startVictoriaLogsWithVolume(t *testing.T, hostDir string) string {
 				"-inmemoryDataFlushInterval=1s",
 			},
 			ExposedPorts: []string{"9428/tcp"},
+			// Run as the test process's uid:gid so files VictoriaLogs writes
+			// into the bind-mounted /data (notably the "partitions" subdir it
+			// creates) are owned by us, not root. Otherwise the in-process
+			// receive handler can't MkdirTemp under partitions on Linux CI.
+			ConfigModifier: func(cfg *container.Config) {
+				cfg.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+			},
 			HostConfigModifier: func(hc *container.HostConfig) {
 				hc.Binds = append(hc.Binds, hostDir+":"+containerDataPath)
 			},

@@ -9,3 +9,4 @@ example/fake-logs-data/
 
 # Test coverage
 coverage.out
+*.breakdown

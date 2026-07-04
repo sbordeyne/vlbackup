@@ -4,12 +4,30 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
 permissions:
   contents: read
   pull-requests: write
 jobs:
-  test:
-    name: Test, Format & Lint
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run linter
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a  # v9.3.0
+        with:
+          version: latest
+  format:
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,30 +45,65 @@ jobs:
             echo "$unformatted"
             exit 1
           fi
-      - name: Run linter
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a  # v9.3.0
+  test:
+    name: Test, Format & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
-          version: latest
+          go-version-file: go.mod
+          cache: true
+      - name: download artifact (master.breakdown)
+        id: download-master-breakdown
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  # v21
+        with:
+          branch: master
+          workflow_conclusion: success
+          name: master.breakdown
+          if_no_artifact_found: warn
       - name: Run tests with coverage
         run: |
-          go test ./... -coverprofile=coverage.out -covermode=atomic
-          go tool cover -func=coverage.out | tee coverage.txt
-      - name: Extract coverage percentage
+          go test ./... -coverprofile=coverage.out -covermode=atomic -coverpkg=./...
+      - name: check test coverage
+        uses: vladopajic/go-test-coverage@a93b868a4cbcbf18dc3781650fad241f0020e609  # v2.18.8
+        continue-on-error: true
         id: coverage
-        run: |
-          COVERAGE=$(go tool cover -func=coverage.out | grep "total:" | awk '{print $3}')
-          echo "total=$COVERAGE" >> "$GITHUB_OUTPUT"
-      - name: Post coverage comment
-        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0  # v3.0.4
         with:
-          header: test-coverage
-          message: |-
-            ## 🧪 Test Coverage
-            **Total coverage: ${{ steps.coverage.outputs.total }}**
-            <details>
-            <summary>Coverage details</summary>
+          config: ./.testcoverage.yaml
+          breakdown-file-name: ${{ github.ref_name == 'master' && 'master.breakdown' || 'feature.breakdown' }}
+          diff-base-breakdown-file-name: ${{ steps.download-master-breakdown.outputs.found_artifact == 'true' && 'master.breakdown' || '' }}
+      - name: upload artifact (master.breakdown)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: github.ref_name == 'master' && github.event_name == 'push'
+        with:
+          name: master.breakdown
+          path: master.breakdown  # as specified via `breakdown-file-name`
+          if-no-files-found: error
+      - name: find pull request ID
+        run: |
+          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.ref_name }}&state=open")
+          PR_ID=$(echo "$PR_DATA" | jq -r '.[0].number')
+          if [ "$PR_ID" != "null" ]; then
+            echo "pull_request_id=$PR_ID" >> $GITHUB_ENV
+          else
+            echo "No open pull request found for this branch."
+          fi
+      - name: post coverage report
+        if: env.pull_request_id
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-tag: coverage-report
+          pr-number: ${{ env.pull_request_id }}
+          message: |
+            go-test-coverage report:
             ```
-            ${{ steps.coverage.outputs.details }}
-            ```
-            </details>
-            > Updated for commit ${{ github.sha }}
+            ${{ fromJSON(steps.coverage.outputs.report) }}```
+      - name: finally check coverage
+        if: steps.coverage.outcome == 'failure'
+        shell: bash
+        run: echo "coverage check failed" && exit 1
