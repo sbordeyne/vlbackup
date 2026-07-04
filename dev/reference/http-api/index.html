@@ -18,7 +18,7 @@
         <link rel="prev" href="../../developer/development/">
       
       
-        <link rel="next" href="../metrics/">
+        <link rel="next" href="../api-explorer/">
       
       
         
@@ -742,15 +742,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#post-snapshot" class="md-nav__link">
+  <a href="#api-endpoints-host-8080" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /snapshot
+        API endpoints (--host, :8080)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="POST /snapshot">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ops-endpoints-ops-host-9090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ops endpoints (--ops-host, :9090)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-v1vlbackupsnapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /v1/vlbackup/snapshot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/snapshot">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -792,15 +814,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#post-apiv1transfer" class="md-nav__link">
+  <a href="#post-v1vlbackuptransfer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /api/v1/transfer
+        POST /v1/vlbackup/transfer
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="POST /api/v1/transfer">
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/transfer">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -842,10 +864,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#post-apiv1transferreceive-and-attach" class="md-nav__link">
+  <a href="#post-v1vlbackuptransferreceive-and-attach" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /api/v1/transfer/receive and /attach
+        POST /v1/vlbackup/transfer/receive and /attach
       
     </span>
   </a>
@@ -853,13 +875,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#health-and-metrics" class="md-nav__link">
+  <a href="#post-v1vlbackuprestore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Health and metrics
+        POST /v1/vlbackup/restore
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/restore">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responses_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -867,6 +928,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -962,15 +1051,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#post-snapshot" class="md-nav__link">
+  <a href="#api-endpoints-host-8080" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /snapshot
+        API endpoints (--host, :8080)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="POST /snapshot">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ops-endpoints-ops-host-9090" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ops endpoints (--ops-host, :9090)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-v1vlbackupsnapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /v1/vlbackup/snapshot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/snapshot">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1012,15 +1123,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#post-apiv1transfer" class="md-nav__link">
+  <a href="#post-v1vlbackuptransfer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /api/v1/transfer
+        POST /v1/vlbackup/transfer
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="POST /api/v1/transfer">
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/transfer">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1062,10 +1173,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#post-apiv1transferreceive-and-attach" class="md-nav__link">
+  <a href="#post-v1vlbackuptransferreceive-and-attach" class="md-nav__link">
     <span class="md-ellipsis">
       
-        POST /api/v1/transfer/receive and /attach
+        POST /v1/vlbackup/transfer/receive and /attach
       
     </span>
   </a>
@@ -1073,13 +1184,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#health-and-metrics" class="md-nav__link">
+  <a href="#post-v1vlbackuprestore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Health and metrics
+        POST /v1/vlbackup/restore
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="POST /v1/vlbackup/restore">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-body_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responses_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1104,7 +1254,12 @@
 
 
 <h1 id="http-api">HTTP API<a class="headerlink" href="#http-api" title="Permanent link">&para;</a></h1>
-<p>All endpoints are served by the same process on <code>--host</code> (default <code>:8080</code>).</p>
+<p>The API is served on <code>--host</code> (default <code>:8080</code>). Health, readiness and metrics
+are served by a <strong>separate ops server</strong> on <code>--ops-host</code> (default <code>:9090</code>) and are
+<strong>not</strong> part of the OpenAPI spec.</p>
+<p>For an interactive, always-in-sync view of the API, see the
+<a href="../api-explorer/">API Explorer</a> — it renders the OpenAPI schema directly.</p>
+<h2 id="api-endpoints-host-8080">API endpoints (<code>--host</code>, <code>:8080</code>)<a class="headerlink" href="#api-endpoints-host-8080" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1117,50 +1272,61 @@
 <tbody>
 <tr>
 <td><code>POST</code></td>
-<td><code>/snapshot</code></td>
+<td><code>/v1/vlbackup/snapshot</code></td>
 <td>—</td>
 <td>Snapshot a partition and upload it to object storage.</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
-<td><code>/api/v1/transfer</code></td>
+<td><code>/v1/vlbackup/transfer</code></td>
 <td>—</td>
 <td>Transfer sealed partitions to a peer vlbackup.</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
-<td><code>/api/v1/transfer/receive</code></td>
+<td><code>/v1/vlbackup/transfer/receive</code></td>
 <td>Bearer</td>
 <td>Target side: receive a partition stream.</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
-<td><code>/api/v1/transfer/attach</code></td>
+<td><code>/v1/vlbackup/transfer/attach</code></td>
 <td>Bearer</td>
 <td>Target side: attach a received partition.</td>
 </tr>
 <tr>
-<td><code>GET</code></td>
-<td><code>/healthz</code></td>
+<td><code>POST</code></td>
+<td><code>/v1/vlbackup/restore</code></td>
 <td>—</td>
-<td>Liveness probe.</td>
-</tr>
-<tr>
-<td><code>GET</code></td>
-<td><code>/readyz</code></td>
-<td>—</td>
-<td>Readiness probe.</td>
-</tr>
-<tr>
-<td><code>GET</code></td>
-<td><code>/metrics</code></td>
-<td>—</td>
-<td>Prometheus metrics.</td>
+<td>Restore a partition from object storage.</td>
 </tr>
 </tbody>
 </table>
 <p>The <code>Bearer</code> endpoints require <code>Authorization: Bearer &lt;token&gt;</code> when <code>VLBACKUP_TRANSFER_AUTH_KEY</code> is set (see <a href="../../user-guide/configuration/">Configuration</a>).</p>
-<h2 id="post-snapshot"><code>POST /snapshot</code><a class="headerlink" href="#post-snapshot" title="Permanent link">&para;</a></h2>
+<h2 id="ops-endpoints-ops-host-9090">Ops endpoints (<code>--ops-host</code>, <code>:9090</code>)<a class="headerlink" href="#ops-endpoints-ops-host-9090" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /healthz</code></td>
+<td>Liveness. Returns <code>200</code> when the process is up.</td>
+</tr>
+<tr>
+<td><code>GET /readyz</code></td>
+<td>Readiness. Returns <code>200</code> when ready to serve.</td>
+</tr>
+<tr>
+<td><code>GET /metrics</code></td>
+<td>Prometheus exposition format. See <a href="../metrics/">Metrics</a>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="post-v1vlbackupsnapshot"><code>POST /v1/vlbackup/snapshot</code><a class="headerlink" href="#post-v1vlbackupsnapshot" title="Permanent link">&para;</a></h2>
 <p>Snapshots the given partition and uploads it to <code>destination_url</code>.</p>
 <h3 id="request-body">Request body<a class="headerlink" href="#request-body" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
@@ -1190,7 +1356,7 @@
 </tbody>
 </table>
 <h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/snapshot<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;s3://my-bucket/backups/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
 </code></pre></div>
@@ -1205,11 +1371,7 @@
 <tbody>
 <tr>
 <td><code>202 Accepted</code></td>
-<td>Snapshot(s) created and uploaded; body <code>OK</code>.</td>
-</tr>
-<tr>
-<td><code>204 No Content</code></td>
-<td>Snapshot created but VictoriaLogs returned no paths — nothing to upload.</td>
+<td>Snapshot created and uploaded, or the partition held no data (empty acknowledgement).</td>
 </tr>
 <tr>
 <td><code>400 Bad Request</code></td>
@@ -1217,12 +1379,12 @@
 </tr>
 <tr>
 <td><code>500 Internal Server Error</code></td>
-<td>VictoriaLogs, storage, or upload failure. Body is <code>{"error": "..."}</code>.</td>
+<td>VictoriaLogs, storage, or upload failure. Body is <code>{"error": "...", "code": 500}</code>.</td>
 </tr>
 </tbody>
 </table>
 <p>Each returned snapshot path is uploaded as <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code>, then the snapshot is deleted from VictoriaLogs.</p>
-<h2 id="post-apiv1transfer"><code>POST /api/v1/transfer</code><a class="headerlink" href="#post-apiv1transfer" title="Permanent link">&para;</a></h2>
+<h2 id="post-v1vlbackuptransfer"><code>POST /v1/vlbackup/transfer</code><a class="headerlink" href="#post-v1vlbackuptransfer" title="Permanent link">&para;</a></h2>
 <p>Transfers per-day partitions from this ("source") VictoriaLogs to another ("target") instance running its own vlbackup sidecar. See <a href="../../user-guide/partition-transfer/">Partition Transfer</a> for the full mechanism.</p>
 <h3 id="request-body_1">Request body<a class="headerlink" href="#request-body_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
@@ -1255,13 +1417,13 @@
 <tr>
 <td><code>range.to</code></td>
 <td>no</td>
-<td>End of the range. Defaults to today.</td>
+<td>End of the range. Defaults to now.</td>
 </tr>
 </tbody>
 </table>
 <p>The range is interpreted as UTC days <code>[from, to)</code>. <strong>Today's active partition is never transferred</strong> — only sealed days strictly before today UTC are eligible.</p>
 <h3 id="example_1">Example<a class="headerlink" href="#example_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup-source:8080/api/v1/transfer<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup-source:8080/v1/vlbackup/transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;target_url&quot;: &quot;http://vlbackup-target:8080&quot;, &quot;range&quot;: {&quot;from&quot;: &quot;2026-07-01T00:00:00Z&quot;}}&#39;</span>
 </code></pre></div>
@@ -1273,37 +1435,80 @@
 <li><code>skipped</code> — days already present on the target (source data left untouched).</li>
 <li><code>errors</code> — per-day failures.</li>
 </ul>
-<p>Status is <code>200</code> when <code>errors</code> is empty, <code>500</code> otherwise (with the partial summary included).</p>
-<h2 id="post-apiv1transferreceive-and-attach"><code>POST /api/v1/transfer/receive</code> and <code>/attach</code><a class="headerlink" href="#post-apiv1transferreceive-and-attach" title="Permanent link">&para;</a></h2>
+<p>Status is <code>200</code> when there are no hard errors, <code>500</code> otherwise. Both carry the same <code>TransferResponse</code> summary; <code>400</code> (malformed body / invalid range or target URL) returns an <code>ErrorResponse</code> instead.</p>
+<h2 id="post-v1vlbackuptransferreceive-and-attach"><code>POST /v1/vlbackup/transfer/receive</code> and <code>/attach</code><a class="headerlink" href="#post-v1vlbackuptransferreceive-and-attach" title="Permanent link">&para;</a></h2>
 <p>These are the <strong>target-side</strong> endpoints, called by the source vlbackup — not by operators. They are protected by the shared bearer token when <code>VLBACKUP_TRANSFER_AUTH_KEY</code> is set.</p>
 <ul>
-<li><code>/api/v1/transfer/receive?partition=YYYYMMDD</code> — accepts a <code>tar.gz</code> stream and extracts it under <code>&lt;data-path&gt;/partitions/</code>.</li>
-<li><code>/api/v1/transfer/attach?partition=YYYYMMDD</code> — attaches the received partition in VictoriaLogs.</li>
+<li><code>/v1/vlbackup/transfer/receive?partition=YYYYMMDD</code> — accepts an <code>application/gzip</code> <code>tar.gz</code> stream and extracts it under <code>&lt;data-path&gt;/partitions/</code>. Returns <code>{"partition": "...", "bytes_written": N}</code>. <code>409</code> if the partition already exists.</li>
+<li><code>/v1/vlbackup/transfer/attach?partition=YYYYMMDD</code> — attaches the received partition in VictoriaLogs. Returns <code>{"partition": "..."}</code>.</li>
 </ul>
+<p>Both return <code>401</code> when the bearer token is missing or wrong.</p>
 <p>If the source dies between detaching and attaching, the data is present but unattached on the target; recover manually:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-XPOST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/api/v1/transfer/attach?partition=20260702&quot;</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=20260702&quot;</span>
 </code></pre></div>
-<h2 id="health-and-metrics">Health and metrics<a class="headerlink" href="#health-and-metrics" title="Permanent link">&para;</a></h2>
+<h2 id="post-v1vlbackuprestore"><code>POST /v1/vlbackup/restore</code><a class="headerlink" href="#post-v1vlbackuprestore" title="Permanent link">&para;</a></h2>
+<p>Downloads a partition snapshot (a <code>tar.gz</code>) from <code>source_url</code>, extracts it into the local data path and attaches it to VictoriaLogs.</p>
+<h3 id="request-body_2">Request body<a class="headerlink" href="#request-body_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;source_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gs://my-bucket/vlbackup/&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;partition_prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20260703&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
-<th>Endpoint</th>
+<th>Field</th>
+<th>Required</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>GET /healthz</code></td>
-<td>Liveness. Returns <code>200</code> when the process is up.</td>
+<td><code>source_url</code></td>
+<td>yes</td>
+<td>Object Storage source URL, e.g. <code>gs://bucket/prefix/</code> or <code>s3://bucket/prefix/</code>.</td>
 </tr>
 <tr>
-<td><code>GET /readyz</code></td>
-<td>Readiness. Returns <code>200</code> when ready to serve.</td>
+<td><code>partition_prefix</code></td>
+<td>yes</td>
+<td>Partition to restore (<code>YYYYMMDD</code>).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example_2">Example<a class="headerlink" href="#example_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
+</code></pre></div>
+<h3 id="responses_1">Responses<a class="headerlink" href="#responses_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>202 Accepted</code></td>
+<td>Snapshot restored and attached; body <code>{"partition", "bytes_written"}</code>.</td>
 </tr>
 <tr>
-<td><code>GET /metrics</code></td>
-<td>Prometheus exposition format. See <a href="../metrics/">Metrics</a>.</td>
+<td><code>400 Bad Request</code></td>
+<td>Malformed body or unsupported <code>source_url</code> scheme.</td>
+</tr>
+<tr>
+<td><code>404 Not Found</code></td>
+<td>The requested snapshot was not found in object storage.</td>
+</tr>
+<tr>
+<td><code>409 Conflict</code></td>
+<td>The partition is already attached locally.</td>
+</tr>
+<tr>
+<td><code>500 Internal Server Error</code></td>
+<td>Download or restore failure.</td>
 </tr>
 </tbody>
 </table>
@@ -1329,7 +1534,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
   </span>
 
     

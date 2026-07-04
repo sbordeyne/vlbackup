@@ -818,6 +818,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/api-explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/metrics/" class="md-nav__link">
         
   
@@ -998,7 +1026,13 @@
 <td><code>--host</code></td>
 <td><code>VLBACKUP_HOST</code></td>
 <td><code>:8080</code></td>
-<td>Address the HTTP server binds to.</td>
+<td>Address the API server binds to.</td>
+</tr>
+<tr>
+<td><code>--ops-host</code></td>
+<td><code>VLBACKUP_OPS_HOST</code></td>
+<td><code>:9090</code></td>
+<td>Address the health/ready/metrics server binds to.</td>
 </tr>
 <tr>
 <td><code>--victoria-logs-url</code></td>
@@ -1032,26 +1066,27 @@
 </div>
 <h2 id="-help"><code>--help</code><a class="headerlink" href="#-help" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vlbackup v1.0.0
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Usage: vlbackup [--host HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Usage: vlbackup [--host HOST] [--ops-host OPS-HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Options:
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  --host HOST            The host to bind the HTTP server to [default: :8080, env: VLBACKUP_HOST]
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  --victoria-logs-url VICTORIA-LOGS-URL
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                         The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VLBACKUP_VICTORIA_LOGS_URL]
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  --victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                         Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set [env: VLBACKUP_VICTORIA_LOGS_AUTH_KEY]
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  --data-path DATA-PATH
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                         Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath [default: /data, env: VLBACKUP_DATA_PATH]
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  --transfer-auth-key TRANSFER-AUTH-KEY
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>                         Optional shared bearer token for inter-vlbackup transfer endpoints [env: VLBACKUP_TRANSFER_AUTH_KEY]
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  --help, -h             display this help and exit
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  --version              display version and exit
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  --ops-host OPS-HOST    The host to bind the health/ready/metrics server to [default: :9090, env: VLBACKUP_OPS_HOST]
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  --victoria-logs-url VICTORIA-LOGS-URL
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                         The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VLBACKUP_VICTORIA_LOGS_URL]
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  --victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                         Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set [env: VLBACKUP_VICTORIA_LOGS_AUTH_KEY]
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  --data-path DATA-PATH
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                         Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath [default: /data, env: VLBACKUP_DATA_PATH]
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  --transfer-auth-key TRANSFER-AUTH-KEY
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>                         Optional shared bearer token for inter-vlbackup transfer endpoints [env: VLBACKUP_TRANSFER_AUTH_KEY]
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  --help, -h             display this help and exit
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>  --version              display version and exit
 </code></pre></div>
 <h2 id="notes-on-specific-settings">Notes on specific settings<a class="headerlink" href="#notes-on-specific-settings" title="Permanent link">&para;</a></h2>
 <h3 id="-data-path-vlbackup_data_path"><code>--data-path</code> / <code>VLBACKUP_DATA_PATH</code><a class="headerlink" href="#-data-path-vlbackup_data_path" title="Permanent link">&para;</a></h3>
 <p>VictoriaLogs reports snapshot paths relative to its own <code>-storageDataPath</code>. vlbackup reads those files directly from the shared volume, so <code>VLBACKUP_DATA_PATH</code> must point at the <strong>same</strong> volume mounted at the <strong>same</strong> path. On the transfer target side, received partitions are written under <code>&lt;data-path&gt;/partitions/</code>.</p>
 <h3 id="-transfer-auth-key-vlbackup_transfer_auth_key"><code>--transfer-auth-key</code> / <code>VLBACKUP_TRANSFER_AUTH_KEY</code><a class="headerlink" href="#-transfer-auth-key-vlbackup_transfer_auth_key" title="Permanent link">&para;</a></h3>
-<p>Only the transfer <em>target</em> endpoints (<code>/api/v1/transfer/receive</code> and <code>/api/v1/transfer/attach</code>) are protected by this bearer token. Set the <strong>same value</strong> on both the source and target sidecars. When empty, the endpoints are unauthenticated — acceptable only on a trusted network. See <a href="../partition-transfer/">Partition Transfer</a>.</p>
+<p>Only the transfer <em>target</em> endpoints (<code>/v1/vlbackup/transfer/receive</code> and <code>/v1/vlbackup/transfer/attach</code>) are protected by this bearer token. Set the <strong>same value</strong> on both the source and target sidecars. When empty, the endpoints are unauthenticated — acceptable only on a trusted network. See <a href="../partition-transfer/">Partition Transfer</a>.</p>
 
 
 
@@ -1074,7 +1109,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
   </span>
 
     

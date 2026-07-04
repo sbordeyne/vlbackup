@@ -812,6 +812,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/api-explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/metrics/" class="md-nav__link">
         
   
@@ -982,15 +1010,15 @@
     participant Tgt as vlbackup (target)
     participant TgtVL as VictoriaLogs (target)
 
-    Cron-&gt;&gt;Src: POST /api/v1/transfer
+    Cron-&gt;&gt;Src: POST /v1/vlbackup/transfer
     loop each sealed day in range
         Src-&gt;&gt;SrcVL: create snapshot
-        Src-&gt;&gt;Tgt: POST /transfer/receive (tar.gz stream)
+        Src-&gt;&gt;Tgt: POST /v1/vlbackup/transfer/receive (tar.gz stream)
         Tgt-&gt;&gt;Tgt: extract into &lt;data-path&gt;/partitions/
         Tgt--&gt;&gt;Src: 200 OK (or 409 Conflict)
         Src-&gt;&gt;SrcVL: delete snapshot
         Src-&gt;&gt;SrcVL: detach partition
-        Src-&gt;&gt;Tgt: POST /transfer/attach
+        Src-&gt;&gt;Tgt: POST /v1/vlbackup/transfer/attach
         Tgt-&gt;&gt;TgtVL: attach partition
     end
     Src--&gt;&gt;Cron: {transferred, skipped, errors}</code></pre>
@@ -1006,7 +1034,7 @@
 <h2 id="crash-recovery">Crash recovery<a class="headerlink" href="#crash-recovery" title="Permanent link">&para;</a></h2>
 <p>The risky window is between <strong>detach</strong> (source) and <strong>attach</strong> (target). If the source dies there, the partition data is already on the target but not attached. Re-attach it manually:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-XPOST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/api/v1/transfer/attach?partition=20260702&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=20260702&quot;</span>
 </code></pre></div>
 <h2 id="deployment-requirements">Deployment requirements<a class="headerlink" href="#deployment-requirements" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
@@ -1016,9 +1044,9 @@
 <ul>
 <li>VictoriaLogs must expose the <code>/internal/partition/*</code> endpoints (snapshot create/delete, attach, detach).</li>
 <li>Set the same <code>VLBACKUP_TRANSFER_AUTH_KEY</code> on both sidecars so the target endpoints are authenticated.</li>
-<li>Trigger transfers from a Kubernetes <code>CronJob</code> (or any scheduler) hitting <code>POST /api/v1/transfer</code> on the source.</li>
+<li>Trigger transfers from a Kubernetes <code>CronJob</code> (or any scheduler) hitting <code>POST /v1/vlbackup/transfer</code> on the source.</li>
 </ul>
-<p>See the <a href="../../reference/http-api/#post-apiv1transfer">HTTP API</a> for the request/response contract.</p>
+<p>See the <a href="../../reference/http-api/#post-v1vlbackuptransfer">HTTP API</a> for the request/response contract.</p>
 
 
 
@@ -1041,7 +1069,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
   </span>
 
     

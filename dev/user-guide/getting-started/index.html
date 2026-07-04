@@ -810,6 +810,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/api-explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/metrics/" class="md-nav__link">
         
   
@@ -978,11 +1006,14 @@
 <p>Images are published to GitHub Container Registry for <code>linux/amd64</code> and <code>linux/arm64</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-v<span class="w"> </span>/path/to/victorialogs/data:/data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">VLBACKUP_VICTORIA_LOGS_URL</span><span class="o">=</span>http://victorialogs:9428<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>ghcr.io/sbordeyne/vlbackup:latest
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">9090</span>:9090<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>-v<span class="w"> </span>/path/to/victorialogs/data:/data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">VLBACKUP_VICTORIA_LOGS_URL</span><span class="o">=</span>http://victorialogs:9428<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>ghcr.io/sbordeyne/vlbackup:latest
 </code></pre></div>
-<p>The server binds to <code>:8080</code> by default and prints <code>Started server on address :8080</code>.</p>
+<p>Two listeners start: the <strong>API</strong> on <code>:8080</code> (<code>--host</code>) and the <strong>ops</strong> server —
+health, readiness and metrics — on <code>:9090</code> (<code>--ops-host</code>). It prints
+<code>Started API server on address :8080</code> and <code>Started ops server on address :9090</code>.</p>
 <h2 id="build-from-source">Build from source<a class="headerlink" href="#build-from-source" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/sbordeyne/vlbackup.git
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">cd</span><span class="w"> </span>vlbackup
@@ -990,14 +1021,14 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>./vlbackup<span class="w"> </span>--victoria-logs-url<span class="o">=</span>http://127.0.0.1:9428
 </code></pre></div>
 <h2 id="try-the-local-stack">Try the local stack<a class="headerlink" href="#try-the-local-stack" title="Permanent link">&para;</a></h2>
-<p>The repository ships an <a href="https://github.com/sbordeyne/vlbackup/blob/main/example/compose.yaml"><code>example/compose.yaml</code></a> that wires up a full playground: a <a href="https://github.com/fsouza/fake-gcs-server">fake-gcs-server</a> emulator, a log generator, a source and a target VictoriaLogs, two vlbackup sidecars, and trigger containers that periodically fire <code>/snapshot</code> and <code>/api/v1/transfer</code>.</p>
+<p>The repository ships an <a href="https://github.com/sbordeyne/vlbackup/blob/main/example/compose.yaml"><code>example/compose.yaml</code></a> that wires up a full playground: a <a href="https://github.com/fsouza/fake-gcs-server">fake-gcs-server</a> emulator, a log generator, a source and a target VictoriaLogs, two vlbackup sidecars, and trigger containers that periodically fire <code>/v1/vlbackup/snapshot</code> and <code>/v1/vlbackup/transfer</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>example
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>up
 </code></pre></div>
 <p>The <code>vlbackup</code> service is pointed at the GCS emulator via <code>STORAGE_EMULATOR_HOST: fake-gcs:4443</code>, so snapshots land in the emulator instead of real GCS.</p>
 <h2 id="take-your-first-snapshot">Take your first snapshot<a class="headerlink" href="#take-your-first-snapshot" title="Permanent link">&para;</a></h2>
 <p>With vlbackup reachable on <code>:8080</code>, trigger a backup of yesterday's partition to your bucket:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/snapshot<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s1">    &quot;destination_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;,</span>
@@ -1031,7 +1062,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
   </span>
 
     

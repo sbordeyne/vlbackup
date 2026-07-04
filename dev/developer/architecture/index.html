@@ -812,6 +812,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/api-explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/metrics/" class="md-nav__link">
         
   
@@ -970,7 +998,7 @@
 
 
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
-<p>VLBackup is a single Go binary (<code>cmd/vlbackup</code>) that serves a small HTTP API and talks to VictoriaLogs and object storage. It has two independent code paths — object-storage backup and peer-to-peer partition transfer — that share very little.</p>
+<p>VLBackup is a single Go binary (<code>cmd/vlbackup</code>) that serves a small HTTP API and talks to VictoriaLogs and object storage. The API is <strong>schema-first</strong>: <code>openapi/schema.yaml</code> is the source of truth, and <code>oapi-codegen</code> generates the server stubs. It has two independent code paths — object-storage backup and peer-to-peer partition transfer — that share very little.</p>
 <h2 id="package-layout">Package layout<a class="headerlink" href="#package-layout" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -982,15 +1010,19 @@
 <tbody>
 <tr>
 <td><code>cmd/vlbackup</code></td>
-<td><code>main</code>: parses args, builds the Prometheus registry, wires the go-chi router.</td>
+<td><code>main</code>: parses args, builds the Prometheus registry, starts the API and ops listeners.</td>
 </tr>
 <tr>
 <td><code>pkg/cli</code></td>
 <td>Flag/env parsing (<code>Args</code>).</td>
 </tr>
 <tr>
-<td><code>pkg/http_handler</code></td>
-<td>HTTP handlers: <code>/snapshot</code>, <code>/api/v1/transfer*</code>, health, bearer auth.</td>
+<td><code>pkg/openapi</code></td>
+<td>Schema-first API: generated stubs (<code>gen.go</code>) + <code>Server</code> implementing the operation handlers.</td>
+</tr>
+<tr>
+<td><code>pkg/http_ops</code></td>
+<td>Health (<code>/healthz</code>) and readiness (<code>/readyz</code>) handlers for the ops server.</td>
 </tr>
 <tr>
 <td><code>pkg/objstore</code></td>
@@ -1011,9 +1043,10 @@
 </tbody>
 </table>
 <h2 id="request-wiring">Request wiring<a class="headerlink" href="#request-wiring" title="Permanent link">&para;</a></h2>
-<p>Handlers are built by factories that close over config and metrics — <code>TriggerHandlerFactory(args, metrics)</code>, <code>TransferHandlerFactory(args, metrics)</code>, etc. <code>main</code> mounts them on a go-chi router; the transfer target endpoints sit behind a <code>BearerAuth</code> middleware keyed on <code>TransferAuthKey</code>.</p>
+<p><code>main</code> starts two listeners: the <strong>API</strong> (<code>--host</code>, <code>:8080</code>) and an <strong>ops</strong> server (<code>--ops-host</code>, <code>:9090</code>) that serves health, readiness and metrics — the ops endpoints are not part of the spec.</p>
+<p>The API is generated from <code>openapi/schema.yaml</code> by <code>oapi-codegen</code> into <code>pkg/openapi/gen.go</code> (regenerate with <code>mise exec -- oapi-codegen</code>). <code>Server</code> (in <code>server.go</code>) implements the generated <code>StrictServerInterface</code> — one method per operation: <code>TriggerSnapshot</code>, <code>TransferPartitions</code>, <code>ReceiveSnapshot</code>, <code>AttachSnapshot</code>, <code>RestoreSnapshot</code>. <code>openapi.NewHandler</code> mounts the generated chi routes behind a <code>Recoverer</code> and a bearer-auth middleware. Auth is enforced only on operations the spec marks with <code>bearerAuth</code>: the generated wrapper stamps <code>BearerAuthScopes</code> into the request context for exactly those routes, and the middleware keys off its presence, comparing against <code>TransferAuthKey</code>.</p>
 <h2 id="object-storage-layer">Object-storage layer<a class="headerlink" href="#object-storage-layer" title="Permanent link">&para;</a></h2>
-<p><code>pkg/objstore</code> decouples the <code>/snapshot</code> handler from any specific SDK. The handler never imports a cloud SDK — it calls <code>objstore.Open(ctx, destinationURL)</code>, which parses the URL, looks up a backend by scheme, and returns a bucket-scoped <code>Repository</code> plus the key prefix.</p>
+<p><code>pkg/objstore</code> decouples the snapshot/restore handlers from any specific SDK. The handler never imports a cloud SDK — it calls <code>objstore.Open(ctx, destinationURL)</code>, which parses the URL, looks up a backend by scheme, and returns a bucket-scoped <code>Repository</code> plus the key prefix.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">Repository</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nx">Upload</span><span class="p">(</span><span class="nx">ctx</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span><span class="w"> </span><span class="nx">key</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="nx">io</span><span class="p">.</span><span class="nx">Reader</span><span class="p">)</span><span class="w"> </span><span class="kt">error</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nx">Download</span><span class="p">(</span><span class="nx">ctx</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span><span class="w"> </span><span class="nx">key</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nx">io</span><span class="p">.</span><span class="nx">ReadCloser</span><span class="p">,</span><span class="w"> </span><span class="kt">error</span><span class="p">)</span>
@@ -1034,9 +1067,9 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="c1">// ...</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
 </code></pre></div>
-<p>That is all that is required — the <code>/snapshot</code> handler dispatches on the destination URL scheme automatically via <code>objstore.Open</code>, so no handler or config changes are needed. Follow the existing <code>gcs.go</code> / <code>s3.go</code> for reference (error mapping to <code>objstore.ErrNotFound</code>, streaming upload, prefix handling).</p>
+<p>That is all that is required — the <code>TriggerSnapshot</code> handler dispatches on the destination URL scheme automatically via <code>objstore.Open</code>, so no handler or config changes are needed. Follow the existing <code>gcs.go</code> / <code>s3.go</code> for reference (error mapping to <code>objstore.ErrNotFound</code>, streaming upload, prefix handling).</p>
 <h2 id="partition-transfer">Partition transfer<a class="headerlink" href="#partition-transfer" title="Permanent link">&para;</a></h2>
-<p>The transfer path (<code>pkg/transfer</code> + the <code>TransferHandlerFactory</code> on the source, <code>TransferReceiveHandlerFactory</code>/<code>TransferAttachHandlerFactory</code> on the target) streams sealed partitions between two vlbackup sidecars over HTTP. See <a href="../../user-guide/partition-transfer/">Partition Transfer</a> for the runtime flow and deployment requirements.</p>
+<p>The transfer path (<code>pkg/transfer</code> + <code>Server.TransferPartitions</code> on the source, <code>Server.ReceiveSnapshot</code>/<code>Server.AttachSnapshot</code> on the target) streams sealed partitions between two vlbackup sidecars over HTTP. See <a href="../../user-guide/partition-transfer/">Partition Transfer</a> for the runtime flow and deployment requirements.</p>
 
 
 
@@ -1059,7 +1092,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 09:07:20 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
   </span>
 
     
