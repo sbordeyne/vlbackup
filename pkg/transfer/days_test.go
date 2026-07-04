@@ -1,9 +1,11 @@
-package transfer
+package transfer_test
 
 import (
 	"reflect"
 	"testing"
 	"time"
+
+	transfer "github.com/sbordeyne/vlbackup/pkg/transfer"
 )
 
 func TestDaysInRange(t *testing.T) {
@@ -58,7 +60,7 @@ func TestDaysInRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := DaysInRange(tt.from, tt.to, now)
+			got, err := transfer.DaysInRange(tt.from, tt.to, now)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("DaysInRange() error = %v, wantErr %v", err, tt.wantErr)
 			}

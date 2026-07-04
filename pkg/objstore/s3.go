@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	Register("s3", newS3Repository)
+	Register("s3", NewS3Repository)
 }
 
 // s3UploadPartSize bounds the in-memory buffer used for streaming multipart
@@ -22,16 +22,16 @@ func init() {
 // a sidecar).
 const s3UploadPartSize = 64 << 20
 
-// s3Repository is a Repository backed by any S3-compatible store. It is
+// S3Repository is a Repository backed by any S3-compatible store. It is
 // configured via environment variables: AWS_ACCESS_KEY_ID,
 // AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION, plus S3_ENDPOINT
 // (default s3.amazonaws.com) and S3_USE_SSL (default true).
-type s3Repository struct {
+type S3Repository struct {
 	client *minio.Client
-	bucket string
+	Bucket string
 }
 
-func newS3Repository(ctx context.Context, u *url.URL) (Repository, error) {
+func NewS3Repository(ctx context.Context, u *url.URL) (Repository, error) {
 	endpoint := os.Getenv("S3_ENDPOINT")
 	if endpoint == "" {
 		endpoint = "s3.amazonaws.com"
@@ -52,22 +52,22 @@ func newS3Repository(ctx context.Context, u *url.URL) (Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating S3 client: %w", err)
 	}
-	return &s3Repository{
+	return &S3Repository{
 		client: client,
-		bucket: u.Host,
+		Bucket: u.Host,
 	}, nil
 }
 
-func (s *s3Repository) Upload(ctx context.Context, key string, r io.Reader) error {
-	_, err := s.client.PutObject(ctx, s.bucket, key, r, -1, minio.PutObjectOptions{
+func (s *S3Repository) Upload(ctx context.Context, key string, r io.Reader) error {
+	_, err := s.client.PutObject(ctx, s.Bucket, key, r, -1, minio.PutObjectOptions{
 		ContentType: "application/gzip",
 		PartSize:    s3UploadPartSize,
 	})
 	return err
 }
 
-func (s *s3Repository) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	obj, err := s.client.GetObject(ctx, s.bucket, key, minio.GetObjectOptions{})
+func (s *S3Repository) Download(ctx context.Context, key string) (io.ReadCloser, error) {
+	obj, err := s.client.GetObject(ctx, s.Bucket, key, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, s.mapNotFound(err, key)
 	}
@@ -79,9 +79,9 @@ func (s *s3Repository) Download(ctx context.Context, key string) (io.ReadCloser,
 	return obj, nil
 }
 
-func (s *s3Repository) List(ctx context.Context, prefix string) iter.Seq2[ObjectInfo, error] {
+func (s *S3Repository) List(ctx context.Context, prefix string) iter.Seq2[ObjectInfo, error] {
 	return func(yield func(ObjectInfo, error) bool) {
-		for obj := range s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true}) {
+		for obj := range s.client.ListObjects(ctx, s.Bucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true}) {
 			if obj.Err != nil {
 				yield(ObjectInfo{}, obj.Err)
 				return
@@ -93,21 +93,21 @@ func (s *s3Repository) List(ctx context.Context, prefix string) iter.Seq2[Object
 	}
 }
 
-func (s *s3Repository) Delete(ctx context.Context, key string) error {
+func (s *S3Repository) Delete(ctx context.Context, key string) error {
 	// S3 delete is idempotent: deleting a missing object usually succeeds,
 	// so ErrNotFound is best-effort here.
-	err := s.client.RemoveObject(ctx, s.bucket, key, minio.RemoveObjectOptions{})
+	err := s.client.RemoveObject(ctx, s.Bucket, key, minio.RemoveObjectOptions{})
 	if err != nil {
 		return s.mapNotFound(err, key)
 	}
 	return nil
 }
 
-func (s *s3Repository) Close() error {
+func (s *S3Repository) Close() error {
 	return nil
 }
 
-func (s *s3Repository) mapNotFound(err error, key string) error {
+func (s *S3Repository) mapNotFound(err error, key string) error {
 	code := minio.ToErrorResponse(err).Code
 	if code == "NoSuchKey" || code == "NoSuchBucket" {
 		return fmt.Errorf("%w: %s", ErrNotFound, key)

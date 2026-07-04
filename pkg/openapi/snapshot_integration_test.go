@@ -1,4 +1,4 @@
-package http_handler_test
+package openapi_test
 
 import (
 	"bytes"
@@ -19,9 +19,9 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/sbordeyne/vlbackup/pkg/cli"
-	"github.com/sbordeyne/vlbackup/pkg/http_handler"
 	"github.com/sbordeyne/vlbackup/pkg/metrics"
 	"github.com/sbordeyne/vlbackup/pkg/objstore"
+	"github.com/sbordeyne/vlbackup/pkg/openapi"
 	"github.com/sbordeyne/vlbackup/pkg/transfer"
 	"github.com/sbordeyne/vlbackup/pkg/victoriametrics"
 )
@@ -108,15 +108,15 @@ func TestTriggerIntegration(t *testing.T) {
 		VictoriaLogsURL: mustParseURL(t, vlURL),
 		DataPath:        dataDir,
 	}
-	handler := http_handler.TriggerHandlerFactory(args, metrics.New(prometheus.NewRegistry()))
+	handler := openapi.NewHandler(openapi.NewServer(args, metrics.New(prometheus.NewRegistry())), "")
 
-	body, _ := json.Marshal(http_handler.TriggerRequestBody{
-		PartitionPrefix: partition,
-		DestinationURL:  "s3://backups/logs/",
+	body, _ := json.Marshal(openapi.TriggerRequest{
+		PartitionPrefix: &partition,
+		DestinationUrl:  "s3://backups/logs/",
 	})
-	req := httptest.NewRequest(http.MethodPost, "/snapshot", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/snapshot", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-	handler(rec, req)
+	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusAccepted {
 		t.Fatalf("snapshot status = %d, body %s", rec.Code, rec.Body.String())

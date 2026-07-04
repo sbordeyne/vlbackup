@@ -1,4 +1,4 @@
-package http_handler_test
+package openapi_test
 
 import (
 	"bytes"
@@ -16,15 +16,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/moby/moby/api/types/container"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/sbordeyne/vlbackup/pkg/cli"
-	"github.com/sbordeyne/vlbackup/pkg/http_handler"
 	"github.com/sbordeyne/vlbackup/pkg/metrics"
+	"github.com/sbordeyne/vlbackup/pkg/openapi"
 	"github.com/sbordeyne/vlbackup/pkg/transfer"
 	"github.com/sbordeyne/vlbackup/pkg/victoriametrics"
 )
@@ -188,20 +187,14 @@ func TestTransferIntegration(t *testing.T) {
 		waitForFlushedData(t, sourceDir, day)
 	}
 
-	// Target vlbackup: wired exactly like main.go's /api/v1 group.
+	// Target vlbackup: the schema-first handler, auth enforced on receive/attach.
 	targetArgs := cli.Args{
 		VictoriaLogsURL: mustParseURL(t, targetVL),
 		DataPath:        targetDir,
 		TransferAuthKey: authToken,
 	}
 	targetMetrics := metrics.New(prometheus.NewRegistry())
-	targetRouter := chi.NewRouter()
-	targetRouter.Group(func(r chi.Router) {
-		r.Use(http_handler.BearerAuth(authToken))
-		r.Post("/api/v1/transfer/receive", http_handler.TransferReceiveHandlerFactory(targetArgs, targetMetrics))
-		r.Post("/api/v1/transfer/attach", http_handler.TransferAttachHandlerFactory(targetArgs, targetMetrics))
-	})
-	targetSrv := httptest.NewServer(targetRouter)
+	targetSrv := httptest.NewServer(openapi.NewHandler(openapi.NewServer(targetArgs, targetMetrics), authToken))
 	t.Cleanup(targetSrv.Close)
 
 	// Source vlbackup transfer handler.
@@ -210,22 +203,22 @@ func TestTransferIntegration(t *testing.T) {
 		DataPath:        sourceDir,
 		TransferAuthKey: authToken,
 	}
-	handler := http_handler.TransferHandlerFactory(sourceArgs, metrics.New(prometheus.NewRegistry()))
+	handler := openapi.NewHandler(openapi.NewServer(sourceArgs, metrics.New(prometheus.NewRegistry())), authToken)
 
-	body, _ := json.Marshal(http_handler.TransferRequestBody{
-		TargetURL: targetSrv.URL,
-		Range: http_handler.TransferRange{
-			From: time.Now().UTC().AddDate(0, 0, -2).Format(time.RFC3339),
+	body, _ := json.Marshal(openapi.TransferRequest{
+		TargetUrl: targetSrv.URL,
+		Range: openapi.TransferRange{
+			From: time.Now().UTC().AddDate(0, 0, -2),
 		},
 	})
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-	handler(rec, req)
+	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("transfer status = %d, body %s", rec.Code, rec.Body.String())
 	}
-	var resp http_handler.TransferResponse
+	var resp openapi.TransferResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
@@ -294,20 +287,21 @@ func TestTransferIntegration(t *testing.T) {
 		waitForFlushedData(t, sourceDir, conflictPartition)
 		waitForFlushedData(t, targetDir, conflictPartition)
 
-		body, _ := json.Marshal(http_handler.TransferRequestBody{
-			TargetURL: targetSrv.URL,
-			Range: http_handler.TransferRange{
-				From: conflictDay.Format(time.RFC3339),
-				To:   conflictDay.AddDate(0, 0, 1).Format(time.RFC3339),
+		to := conflictDay.AddDate(0, 0, 1)
+		body, _ := json.Marshal(openapi.TransferRequest{
+			TargetUrl: targetSrv.URL,
+			Range: openapi.TransferRange{
+				From: conflictDay,
+				To:   &to,
 			},
 		})
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer", bytes.NewReader(body))
-		handler(rec, req)
+		req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(body))
+		handler.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
 		}
-		var resp http_handler.TransferResponse
+		var resp openapi.TransferResponse
 		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 			t.Fatal(err)
 		}

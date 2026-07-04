@@ -1,4 +1,4 @@
-package transfer
+package transfer_test
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	transfer "github.com/sbordeyne/vlbackup/pkg/transfer"
 )
 
 // makeSnapshotDir builds a fake snapshot directory tree and returns its path.
@@ -46,7 +48,7 @@ func TestNewPeerClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewPeerClient(tt.baseURL, "")
+			c, err := transfer.NewPeerClient(tt.baseURL, "")
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("NewPeerClient(%q) err = nil, want error", tt.baseURL)
@@ -56,7 +58,7 @@ func TestNewPeerClient(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewPeerClient(%q) err = %v, want nil", tt.baseURL, err)
 			}
-			if c == nil || c.http == nil {
+			if c == nil || c.Http == nil {
 				t.Errorf("NewPeerClient(%q) returned nil client or http", tt.baseURL)
 			}
 		})
@@ -65,11 +67,11 @@ func TestNewPeerClient(t *testing.T) {
 
 func TestNewRequest(t *testing.T) {
 	t.Run("with auth key", func(t *testing.T) {
-		c, err := NewPeerClient("http://example.com", "secret")
+		c, err := transfer.NewPeerClient("http://example.com", "secret")
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := c.newRequest(context.Background(), RECEIVE_PATH, "20240101", nil)
+		req, err := c.NewRequest(context.Background(), transfer.RECEIVE_PATH, "20240101", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,8 +81,8 @@ func TestNewRequest(t *testing.T) {
 		if got := req.URL.Query().Get("partition"); got != "20240101" {
 			t.Errorf("partition = %q, want %q", got, "20240101")
 		}
-		if !strings.HasSuffix(req.URL.Path, RECEIVE_PATH) {
-			t.Errorf("path = %q, want suffix %q", req.URL.Path, RECEIVE_PATH)
+		if !strings.HasSuffix(req.URL.Path, transfer.RECEIVE_PATH) {
+			t.Errorf("path = %q, want suffix %q", req.URL.Path, transfer.RECEIVE_PATH)
 		}
 		if req.Method != http.MethodPost {
 			t.Errorf("method = %q, want POST", req.Method)
@@ -88,11 +90,11 @@ func TestNewRequest(t *testing.T) {
 	})
 
 	t.Run("without auth key", func(t *testing.T) {
-		c, err := NewPeerClient("http://example.com", "")
+		c, err := transfer.NewPeerClient("http://example.com", "")
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := c.newRequest(context.Background(), ATTACH_PATH, "20240101", nil)
+		req, err := c.NewRequest(context.Background(), transfer.ATTACH_PATH, "20240101", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,7 +109,7 @@ func TestPeerError(t *testing.T) {
 		Status: "500 Internal Server Error",
 		Body:   io.NopCloser(strings.NewReader("boom")),
 	}
-	err := peerError("test op", resp)
+	err := transfer.PeerError("test op", resp)
 	msg := err.Error()
 	for _, want := range []string{"test op", "500 Internal Server Error", "boom"} {
 		if !strings.Contains(msg, want) {
@@ -133,7 +135,7 @@ func TestSendPartition(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, err := NewPeerClient(srv.URL, "tok")
+		c, err := transfer.NewPeerClient(srv.URL, "tok")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -165,9 +167,9 @@ func TestSendPartition(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, _ := NewPeerClient(srv.URL, "")
+		c, _ := transfer.NewPeerClient(srv.URL, "")
 		_, err := c.SendPartition(context.Background(), "20240101", snapshotDir)
-		if !errors.Is(err, ErrConflict) {
+		if !errors.Is(err, transfer.ErrConflict) {
 			t.Errorf("err = %v, want ErrConflict", err)
 		}
 	})
@@ -179,7 +181,7 @@ func TestSendPartition(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, _ := NewPeerClient(srv.URL, "")
+		c, _ := transfer.NewPeerClient(srv.URL, "")
 		_, err := c.SendPartition(context.Background(), "20240101", snapshotDir)
 		if err == nil {
 			t.Fatal("err = nil, want error")
@@ -197,7 +199,7 @@ func TestSendPartition(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, _ := NewPeerClient(srv.URL, "")
+		c, _ := transfer.NewPeerClient(srv.URL, "")
 		_, err := c.SendPartition(context.Background(), "20240101", snapshotDir)
 		if err == nil || !strings.Contains(err.Error(), "decode receive response") {
 			t.Errorf("err = %v, want decode error", err)
@@ -205,7 +207,7 @@ func TestSendPartition(t *testing.T) {
 	})
 
 	t.Run("connection refused", func(t *testing.T) {
-		c, _ := NewPeerClient("http://127.0.0.1:1", "")
+		c, _ := transfer.NewPeerClient("http://127.0.0.1:1", "")
 		_, err := c.SendPartition(context.Background(), "20240101", snapshotDir)
 		if err == nil {
 			t.Error("err = nil, want connection error")
@@ -222,7 +224,7 @@ func TestAttach(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, _ := NewPeerClient(srv.URL, "")
+		c, _ := transfer.NewPeerClient(srv.URL, "")
 		if err := c.Attach(context.Background(), "20240101"); err != nil {
 			t.Fatalf("Attach err = %v", err)
 		}
@@ -237,7 +239,7 @@ func TestAttach(t *testing.T) {
 		}))
 		t.Cleanup(srv.Close)
 
-		c, _ := NewPeerClient(srv.URL, "")
+		c, _ := transfer.NewPeerClient(srv.URL, "")
 		err := c.Attach(context.Background(), "20240101")
 		if err == nil || !strings.Contains(err.Error(), "transfer attach failed") {
 			t.Errorf("err = %v, want attach failure", err)
@@ -245,7 +247,7 @@ func TestAttach(t *testing.T) {
 	})
 
 	t.Run("connection refused", func(t *testing.T) {
-		c, _ := NewPeerClient("http://127.0.0.1:1", "")
+		c, _ := transfer.NewPeerClient("http://127.0.0.1:1", "")
 		if err := c.Attach(context.Background(), "20240101"); err == nil {
 			t.Error("err = nil, want connection error")
 		}

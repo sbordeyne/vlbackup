@@ -13,12 +13,12 @@ import (
 // The URL host is the bucket name.
 type Factory func(ctx context.Context, u *url.URL) (Repository, error)
 
-var registry = map[string]Factory{}
+var Registry = map[string]Factory{}
 
 // Register makes a backend available under the given URL scheme.
 // It is meant to be called from init() in each backend file.
 func Register(scheme string, f Factory) {
-	registry[scheme] = f
+	Registry[scheme] = f
 }
 
 // Open parses rawURL, dispatches on its scheme, and returns a bucket-scoped
@@ -29,9 +29,9 @@ func Open(ctx context.Context, rawURL string) (Repository, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	f, ok := registry[u.Scheme]
+	f, ok := Registry[u.Scheme]
 	if !ok {
-		return nil, "", fmt.Errorf("%w %q (supported: %s)", ErrUnsupportedScheme, u.Scheme, strings.Join(slices.Sorted(maps.Keys(registry)), ", "))
+		return nil, "", fmt.Errorf("%w %q (supported: %s)", ErrUnsupportedScheme, u.Scheme, strings.Join(slices.Sorted(maps.Keys(Registry)), ", "))
 	}
 	if u.Host == "" {
 		return nil, "", fmt.Errorf("destination URL %q has no bucket", rawURL)

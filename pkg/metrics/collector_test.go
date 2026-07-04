@@ -1,4 +1,4 @@
-package metrics
+package metrics_test
 
 import (
 	"net/http"
@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sbordeyne/vlbackup/pkg/metrics"
 )
 
 func TestNew(t *testing.T) {
-	m := New(prometheus.NewRegistry())
+	m := metrics.New(prometheus.NewRegistry())
 	if m == nil {
 		t.Fatal("New returned nil")
 	}
@@ -28,17 +29,17 @@ func TestNew(t *testing.T) {
 
 func TestNewDuplicateRegistrationPanics(t *testing.T) {
 	reg := prometheus.NewRegistry()
-	New(reg)
+	metrics.New(reg)
 	defer func() {
 		if recover() == nil {
 			t.Error("second New on same registry did not panic")
 		}
 	}()
-	New(reg)
+	metrics.New(reg)
 }
 
 func TestHandler(t *testing.T) {
-	h := Handler()
+	h := metrics.Handler()
 	if h == nil {
 		t.Fatal("Handler returned nil")
 	}

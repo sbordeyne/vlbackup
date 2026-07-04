@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	Register("gs", newGCSRepository)
+	Register("gs", NewGCSRepository)
 }
 
 // gcsRepository is a Repository backed by Google Cloud Storage. Credentials
@@ -24,7 +24,7 @@ type gcsRepository struct {
 	bucket *storage.BucketHandle
 }
 
-func newGCSRepository(ctx context.Context, u *url.URL) (Repository, error) {
+func NewGCSRepository(ctx context.Context, u *url.URL) (Repository, error) {
 	// JSON reads instead of the default XML API: fake-gcs-server (used in
 	// tests and the compose example) does not serve XML-API downloads.
 	client, err := storage.NewClient(ctx, storage.WithJSONReads())

@@ -1,4 +1,4 @@
-package objstore
+package objstore_test
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"iter"
 	"net/url"
 	"testing"
+
+	objstore "github.com/sbordeyne/vlbackup/pkg/objstore"
 )
 
 type fakeRepository struct {
@@ -18,15 +20,15 @@ func (f *fakeRepository) Upload(ctx context.Context, key string, r io.Reader) er
 }
 
 func (f *fakeRepository) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	return nil, ErrNotFound
+	return nil, objstore.ErrNotFound
 }
 
-func (f *fakeRepository) List(ctx context.Context, prefix string) iter.Seq2[ObjectInfo, error] {
-	return func(yield func(ObjectInfo, error) bool) {}
+func (f *fakeRepository) List(ctx context.Context, prefix string) iter.Seq2[objstore.ObjectInfo, error] {
+	return func(yield func(objstore.ObjectInfo, error) bool) {}
 }
 
 func (f *fakeRepository) Delete(ctx context.Context, key string) error {
-	return ErrNotFound
+	return objstore.ErrNotFound
 }
 
 func (f *fakeRepository) Close() error {
@@ -34,48 +36,48 @@ func (f *fakeRepository) Close() error {
 }
 
 func TestOpenUnsupportedScheme(t *testing.T) {
-	_, _, err := Open(t.Context(), "azblob://bucket/prefix")
-	if !errors.Is(err, ErrUnsupportedScheme) {
+	_, _, err := objstore.Open(t.Context(), "azblob://bucket/prefix")
+	if !errors.Is(err, objstore.ErrUnsupportedScheme) {
 		t.Fatalf("expected ErrUnsupportedScheme, got %v", err)
 	}
 }
 
 func TestOpenInvalidURL(t *testing.T) {
-	_, _, err := Open(t.Context(), "://not a url")
+	_, _, err := objstore.Open(t.Context(), "://not a url")
 	if err == nil {
 		t.Fatal("expected error for invalid URL")
 	}
 }
 
 func TestOpenMissingBucket(t *testing.T) {
-	Register("fake-nobucket", func(ctx context.Context, u *url.URL) (Repository, error) {
+	objstore.Register("fake-nobucket", func(ctx context.Context, u *url.URL) (objstore.Repository, error) {
 		return &fakeRepository{}, nil
 	})
-	_, _, err := Open(t.Context(), "fake-nobucket:///prefix")
+	_, _, err := objstore.Open(t.Context(), "fake-nobucket:///prefix")
 	if err == nil {
 		t.Fatal("expected error for URL without bucket")
 	}
 }
 
 func TestOpenFactoryError(t *testing.T) {
-	Register("fake-boom", func(ctx context.Context, u *url.URL) (Repository, error) {
+	objstore.Register("fake-boom", func(ctx context.Context, u *url.URL) (objstore.Repository, error) {
 		return nil, errors.New("factory boom")
 	})
-	if _, _, err := Open(t.Context(), "fake-boom://bucket/prefix"); err == nil {
+	if _, _, err := objstore.Open(t.Context(), "fake-boom://bucket/prefix"); err == nil {
 		t.Fatal("expected factory error, got nil")
 	}
 }
 
 func TestOpenRegisteredSchemes(t *testing.T) {
 	for _, scheme := range []string{"gs", "s3"} {
-		if _, ok := registry[scheme]; !ok {
+		if _, ok := objstore.Registry[scheme]; !ok {
 			t.Errorf("scheme %q not registered", scheme)
 		}
 	}
 }
 
 func TestOpenPrefixNormalization(t *testing.T) {
-	Register("fake", func(ctx context.Context, u *url.URL) (Repository, error) {
+	objstore.Register("fake", func(ctx context.Context, u *url.URL) (objstore.Repository, error) {
 		return &fakeRepository{bucket: u.Host}, nil
 	})
 	tests := []struct {
@@ -91,7 +93,7 @@ func TestOpenPrefixNormalization(t *testing.T) {
 		{"fake://b/a/b/c", "b", "a/b/c"},
 	}
 	for _, tt := range tests {
-		repo, prefix, err := Open(t.Context(), tt.url)
+		repo, prefix, err := objstore.Open(t.Context(), tt.url)
 		if err != nil {
 			t.Errorf("Open(%q): unexpected error %v", tt.url, err)
 			continue

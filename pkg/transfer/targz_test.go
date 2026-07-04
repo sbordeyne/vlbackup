@@ -1,4 +1,4 @@
-package transfer
+package transfer_test
 
 import (
 	"archive/tar"
@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	transfer "github.com/sbordeyne/vlbackup/pkg/transfer"
 )
 
 func writeFile(t *testing.T, path string, contents []byte) {
@@ -29,12 +31,12 @@ func TestStreamExtractRoundTrip(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := StreamDir(src, &buf); err != nil {
+	if err := transfer.StreamDir(src, &buf); err != nil {
 		t.Fatalf("StreamDir: %v", err)
 	}
 
 	dest := t.TempDir()
-	written, err := ExtractDir(&buf, dest)
+	written, err := transfer.ExtractDir(&buf, dest)
 	if err != nil {
 		t.Fatalf("ExtractDir: %v", err)
 	}
@@ -70,11 +72,11 @@ func TestStreamDirHardlinks(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := StreamDir(src, &buf); err != nil {
+	if err := transfer.StreamDir(src, &buf); err != nil {
 		t.Fatalf("StreamDir with hardlinks: %v", err)
 	}
 	dest := t.TempDir()
-	if _, err := ExtractDir(&buf, dest); err != nil {
+	if _, err := transfer.ExtractDir(&buf, dest); err != nil {
 		t.Fatalf("ExtractDir: %v", err)
 	}
 	for _, name := range []string{"original.bin", "link.bin"} {
@@ -94,7 +96,7 @@ func TestStreamDirRejectsSymlinks(t *testing.T) {
 	if err := os.Symlink("file.txt", filepath.Join(src, "sym.txt")); err != nil {
 		t.Fatal(err)
 	}
-	if err := StreamDir(src, &bytes.Buffer{}); err == nil {
+	if err := transfer.StreamDir(src, &bytes.Buffer{}); err == nil {
 		t.Error("StreamDir accepted a symlink, want error")
 	}
 }
@@ -131,7 +133,7 @@ func TestExtractDirRejectsTraversal(t *testing.T) {
 	for _, name := range []string{"../evil.txt", "a/../../evil.txt", "/abs/evil.txt"} {
 		t.Run(name, func(t *testing.T) {
 			buf := buildTar(t, map[string]string{name: "evil"})
-			if _, err := ExtractDir(buf, t.TempDir()); err == nil {
+			if _, err := transfer.ExtractDir(buf, t.TempDir()); err == nil {
 				t.Errorf("ExtractDir accepted entry %q, want error", name)
 			}
 		})
@@ -152,13 +154,13 @@ func TestExtractDirRejectsSpecialEntries(t *testing.T) {
 	}
 	_ = tw.Close()
 	_ = gz.Close()
-	if _, err := ExtractDir(&buf, t.TempDir()); err == nil {
+	if _, err := transfer.ExtractDir(&buf, t.TempDir()); err == nil {
 		t.Error("ExtractDir accepted a symlink entry, want error")
 	}
 }
 
 func TestExtractDirRejectsGarbage(t *testing.T) {
-	if _, err := ExtractDir(bytes.NewBufferString("not a gzip stream"), t.TempDir()); err == nil {
+	if _, err := transfer.ExtractDir(bytes.NewBufferString("not a gzip stream"), t.TempDir()); err == nil {
 		t.Error("ExtractDir accepted garbage input, want error")
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// truncateUTC returns t at midnight UTC.
-func truncateUTC(t time.Time) time.Time {
+// TruncateUTC returns t at midnight UTC.
+func TruncateUTC(t time.Time) time.Time {
 	t = t.UTC()
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
@@ -16,12 +16,12 @@ func truncateUTC(t time.Time) time.Time {
 // are eligible for transfer. A zero `to` means "today". `now` is
 // injected for testability; callers pass time.Now().
 func DaysInRange(from, to, now time.Time) ([]string, error) {
-	today := truncateUTC(now)
-	from = truncateUTC(from)
+	today := TruncateUTC(now)
+	from = TruncateUTC(from)
 	if to.IsZero() {
 		to = today
 	} else {
-		to = truncateUTC(to)
+		to = TruncateUTC(to)
 	}
 	if from.After(to) {
 		return nil, fmt.Errorf("invalid range: from %s is after to %s", from.Format("20060102"), to.Format("20060102"))

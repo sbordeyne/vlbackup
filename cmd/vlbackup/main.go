@@ -12,8 +12,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sbordeyne/vlbackup/pkg/cli"
-	"github.com/sbordeyne/vlbackup/pkg/http_handler"
+	"github.com/sbordeyne/vlbackup/pkg/http_ops"
 	"github.com/sbordeyne/vlbackup/pkg/metrics"
+	"github.com/sbordeyne/vlbackup/pkg/openapi"
 )
 
 func main() {
@@ -25,27 +26,27 @@ func main() {
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		version.NewCollector("vlbackup"),
 	)
-	metrics := metrics.New(reg)
+	m := metrics.New(reg)
 
-	r := chi.NewRouter()
-	r.Use(middleware.Recoverer)
+	// Main API: the schema-first OpenAPI handler.
+	apiHandler := openapi.NewHandler(openapi.NewServer(args, m), args.TransferAuthKey)
 
-	r.Get("/readyz", http_handler.ReadyHandler)
-	r.Get("/healthz", http_handler.HealthHandler)
-	// Expose /metrics HTTP endpoint using the created custom registry.
-	r.Get("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}).ServeHTTP)
-	r.Post("/snapshot", http_handler.TriggerHandlerFactory(args, metrics))
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/transfer", http_handler.TransferHandlerFactory(args, metrics))
-		r.Group(func(r chi.Router) {
-			r.Use(http_handler.BearerAuth(args.TransferAuthKey))
-			r.Post("/transfer/receive", http_handler.TransferReceiveHandlerFactory(args, metrics))
-			r.Post("/transfer/attach", http_handler.TransferAttachHandlerFactory(args, metrics))
-		})
-	})
+	// Ops server: health/ready/metrics on a separate port, not part of the spec.
+	ops := chi.NewRouter()
+	ops.Use(middleware.Recoverer)
+	ops.Get("/healthz", http_ops.HealthHandler)
+	ops.Get("/readyz", http_ops.ReadyHandler)
+	ops.Get("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}).ServeHTTP)
 
-	fmt.Printf("Started server on address %s", args.Host)
-	if err := http.ListenAndServe(args.Host, r); err != nil {
-		log.Fatal(err)
-	}
+	// Run both listeners in their own goroutines; the first error wins.
+	errs := make(chan error, 2)
+	go func() {
+		fmt.Printf("Started API server on address %s\n", args.Host)
+		errs <- http.ListenAndServe(args.Host, apiHandler)
+	}()
+	go func() {
+		fmt.Printf("Started ops server on address %s\n", args.OpsHost)
+		errs <- http.ListenAndServe(args.OpsHost, ops)
+	}()
+	log.Fatal(<-errs)
 }
