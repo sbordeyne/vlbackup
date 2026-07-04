@@ -1,4 +1,4 @@
-package http_handler
+package openapi_test
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,167 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sbordeyne/vlbackup/pkg/cli"
-	"github.com/sbordeyne/vlbackup/pkg/metrics"
-	"github.com/sbordeyne/vlbackup/pkg/transfer"
+	openapi "github.com/sbordeyne/vlbackup/pkg/openapi"
 )
-
-func newTestMetrics() *metrics.Metrics {
-	return metrics.New(prometheus.NewRegistry())
-}
-
-func testArgs(t *testing.T, vlURL string) cli.Args {
-	t.Helper()
-	args := cli.Args{
-		DataPath: t.TempDir(),
-	}
-	if vlURL != "" {
-		parsed, err := url.Parse(vlURL)
-		if err != nil {
-			t.Fatal(err)
-		}
-		args.VictoriaLogsURL = *parsed
-	}
-	return args
-}
-
-// makeSnapshotDir builds a fake snapshot directory tree and returns its path.
-func makeSnapshotDir(t *testing.T) string {
-	t.Helper()
-	dir := t.TempDir()
-	for path, contents := range map[string]string{
-		"datadb/parts.json":                 `["18A0AD752171BFCD"]`,
-		"datadb/18A0AD752171BFCD/index.bin": "index-data",
-		"indexdb/parts.json":                `[]`,
-	} {
-		full := filepath.Join(dir, path)
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(full, []byte(contents), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return dir
-}
-
-func streamOf(t *testing.T, dir string) *bytes.Buffer {
-	t.Helper()
-	var buf bytes.Buffer
-	if err := transfer.StreamDir(dir, &buf); err != nil {
-		t.Fatal(err)
-	}
-	return &buf
-}
-
-func TestTransferReceiveHandler(t *testing.T) {
-	t.Run("valid stream extracts partition", func(t *testing.T) {
-		args := testArgs(t, "")
-		handler := TransferReceiveHandlerFactory(args, newTestMetrics())
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer/receive?partition=20260701", streamOf(t, makeSnapshotDir(t)))
-		rec := httptest.NewRecorder()
-		handler(rec, req)
-
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
-		}
-		var resp struct {
-			Partition    string `json:"partition"`
-			BytesWritten int64  `json:"bytes_written"`
-		}
-		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-			t.Fatal(err)
-		}
-		if resp.Partition != "20260701" || resp.BytesWritten == 0 {
-			t.Errorf("unexpected response: %+v", resp)
-		}
-		got, err := os.ReadFile(filepath.Join(args.DataPath, "partitions", "20260701", "datadb", "parts.json"))
-		if err != nil || string(got) != `["18A0AD752171BFCD"]` {
-			t.Errorf("extracted file mismatch: %q, err %v", got, err)
-		}
-		// No stray temp dirs left behind.
-		entries, _ := os.ReadDir(filepath.Join(args.DataPath, "partitions"))
-		if len(entries) != 1 {
-			t.Errorf("expected exactly 1 entry in partitions dir, got %d", len(entries))
-		}
-	})
-
-	t.Run("existing partition yields 409", func(t *testing.T) {
-		args := testArgs(t, "")
-		if err := os.MkdirAll(filepath.Join(args.DataPath, "partitions", "20260701"), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		handler := TransferReceiveHandlerFactory(args, newTestMetrics())
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer/receive?partition=20260701", streamOf(t, makeSnapshotDir(t)))
-		rec := httptest.NewRecorder()
-		handler(rec, req)
-		if rec.Code != http.StatusConflict {
-			t.Errorf("status = %d, want 409", rec.Code)
-		}
-	})
-
-	t.Run("invalid partition param yields 400", func(t *testing.T) {
-		handler := TransferReceiveHandlerFactory(testArgs(t, ""), newTestMetrics())
-		for _, p := range []string{"", "2026", "../evil", "2026070a"} {
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer/receive?partition="+url.QueryEscape(p), nil)
-			rec := httptest.NewRecorder()
-			handler(rec, req)
-			if rec.Code != http.StatusBadRequest {
-				t.Errorf("partition %q: status = %d, want 400", p, rec.Code)
-			}
-		}
-	})
-
-	t.Run("garbage body yields 400 and no partition", func(t *testing.T) {
-		args := testArgs(t, "")
-		handler := TransferReceiveHandlerFactory(args, newTestMetrics())
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer/receive?partition=20260701", strings.NewReader("not gzip"))
-		rec := httptest.NewRecorder()
-		handler(rec, req)
-		if rec.Code != http.StatusBadRequest {
-			t.Errorf("status = %d, want 400", rec.Code)
-		}
-		if _, err := os.Stat(filepath.Join(args.DataPath, "partitions", "20260701")); !os.IsNotExist(err) {
-			t.Error("partition dir must not exist after failed extraction")
-		}
-	})
-}
-
-func TestBearerAuth(t *testing.T) {
-	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	t.Run("empty token disables auth", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		BearerAuth("")(next).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/", nil))
-		if rec.Code != http.StatusOK {
-			t.Errorf("status = %d, want 200", rec.Code)
-		}
-	})
-	t.Run("missing or wrong token yields 401", func(t *testing.T) {
-		for _, header := range []string{"", "Bearer wrong", "Basic secret"} {
-			req := httptest.NewRequest(http.MethodPost, "/", nil)
-			if header != "" {
-				req.Header.Set("Authorization", header)
-			}
-			rec := httptest.NewRecorder()
-			BearerAuth("secret")(next).ServeHTTP(rec, req)
-			if rec.Code != http.StatusUnauthorized {
-				t.Errorf("header %q: status = %d, want 401", header, rec.Code)
-			}
-		}
-	})
-	t.Run("correct token passes", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", nil)
-		req.Header.Set("Authorization", "Bearer secret")
-		rec := httptest.NewRecorder()
-		BearerAuth("secret")(next).ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
-			t.Errorf("status = %d, want 200", rec.Code)
-		}
-	})
-}
 
 // fakeVL is a fake VictoriaLogs /internal/partition API recording calls.
 type fakeVL struct {
@@ -249,7 +89,7 @@ type fakeTarget struct {
 func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/transfer/receive", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/vlbackup/transfer/receive", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.Copy(io.Discard, r.Body)
 		f.mu.Lock()
 		defer f.mu.Unlock()
@@ -265,7 +105,7 @@ func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 		f.received = append(f.received, day)
 		_, _ = fmt.Fprint(w, `{"bytes_written": 42}`)
 	})
-	mux.HandleFunc("/api/v1/transfer/attach", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/vlbackup/transfer/attach", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		day := r.URL.Query().Get("partition")
@@ -290,27 +130,50 @@ func lastDays(n int) []string {
 	return days
 }
 
-func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (*httptest.ResponseRecorder, TransferResponse) {
+// transferBody builds a TransferRequest JSON body from a target URL and an
+// RFC3339 "from" timestamp.
+func transferBody(t *testing.T, targetURL, from string) []byte {
+	t.Helper()
+	fromT, err := time.Parse(time.RFC3339, from)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(openapi.TransferRequest{
+		TargetUrl: targetURL,
+		Range:     openapi.TransferRange{From: fromT},
+	})
+	return body
+}
+
+func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (*httptest.ResponseRecorder, openapi.TransferResponse) {
 	t.Helper()
 	vlSrv := vl.server(t)
 	targetSrv := target.server(t)
-	args := testArgs(t, vlSrv.URL)
-	handler := TransferHandlerFactory(args, newTestMetrics())
+	h := buildHandler(testArgs(t, vlSrv.URL), newTestMetrics())
 
 	from := time.Now().UTC().AddDate(0, 0, -nDays).Format(time.RFC3339)
-	body, _ := json.Marshal(TransferRequestBody{
-		TargetURL: targetSrv.URL,
-		Range:     TransferRange{From: from},
-	})
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer", bytes.NewReader(body))
-	rec := httptest.NewRecorder()
-	handler(rec, req)
+	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(transferBody(t, targetSrv.URL, from)))
+	rec := do(h, req)
 
-	var resp TransferResponse
+	var resp openapi.TransferResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("unmarshaling response %q: %v", rec.Body.String(), err)
 	}
 	return rec, resp
+}
+
+func TestParseTransferRangeBadOrder(t *testing.T) {
+	from := time.Date(2026, 7, 3, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
+	if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: from, To: &to}); err == nil {
+		t.Error("parseTransferRange err = nil, want from-after-to error")
+	}
+}
+
+func TestParseTransferRangeMissingFrom(t *testing.T) {
+	if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{}); err == nil {
+		t.Error("parseTransferRange err = nil, want range.from required")
+	}
 }
 
 func TestTransferHandler(t *testing.T) {
@@ -380,7 +243,7 @@ func TestTransferHandler(t *testing.T) {
 	})
 
 	t.Run("invalid body yields 400", func(t *testing.T) {
-		handler := TransferHandlerFactory(testArgs(t, "http://127.0.0.1:1"), newTestMetrics())
+		h := buildHandler(testArgs(t, "http://127.0.0.1:1"), newTestMetrics())
 		for name, body := range map[string]string{
 			"garbage":       "not json",
 			"missing from":  `{"target_url": "http://x", "range": {}}`,
@@ -388,9 +251,8 @@ func TestTransferHandler(t *testing.T) {
 			"bad target":    `{"target_url": "not-a-url", "range": {"from": "2026-07-01T00:00:00Z"}}`,
 			"from after to": `{"target_url": "http://x", "range": {"from": "2026-07-03T00:00:00Z", "to": "2026-07-01T00:00:00Z"}}`,
 		} {
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/transfer", strings.NewReader(body))
-			rec := httptest.NewRecorder()
-			handler(rec, req)
+			req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", strings.NewReader(body))
+			rec := do(h, req)
 			if rec.Code != http.StatusBadRequest {
 				t.Errorf("%s: status = %d, want 400", name, rec.Code)
 			}
@@ -398,16 +260,71 @@ func TestTransferHandler(t *testing.T) {
 	})
 }
 
-func assertEqual(t *testing.T, label string, got, want []string) {
-	t.Helper()
-	if len(got) != len(want) {
-		t.Errorf("%s = %v, want %v", label, got, want)
-		return
-	}
-	for i := range got {
-		if got[i] != want[i] {
-			t.Errorf("%s = %v, want %v", label, got, want)
-			return
+// TestTransferHandlerStageErrors drives each per-day failure branch of the
+// source-side handler through the fake VL / target servers.
+func TestTransferHandlerStageErrors(t *testing.T) {
+	day := lastDays(1)[0]
+
+	t.Run("create snapshot fails", func(t *testing.T) {
+		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failCreateDays: map[string]bool{day: true}}
+		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
 		}
+	})
+
+	t.Run("multiple snapshot paths", func(t *testing.T) {
+		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), multiDays: map[string]bool{day: true}}
+		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		}
+		if len(vl.deletedSnaps) != 2 {
+			t.Errorf("deletedSnaps = %d, want 2 (both stray paths cleaned)", len(vl.deletedSnaps))
+		}
+	})
+
+	t.Run("snapshot cleanup fails", func(t *testing.T) {
+		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failDelete: true}
+		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		}
+	})
+
+	t.Run("detach fails", func(t *testing.T) {
+		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failDetachDays: map[string]bool{day: true}}
+		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		}
+	})
+
+	t.Run("attach fails", func(t *testing.T) {
+		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
+		target := &fakeTarget{failAttachDays: map[string]bool{day: true}}
+		rec, resp := doTransfer(t, vl, target, 1)
+		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		}
+	})
+}
+
+// TestTransferReceiveMkdirError makes DataPath a regular file so creating the
+// partitions directory fails with 500.
+func TestTransferReceiveMkdirError(t *testing.T) {
+	dataFile := filepath.Join(t.TempDir(), "data")
+	if err := os.WriteFile(dataFile, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	args := testArgs(t, "")
+	args.DataPath = dataFile
+	h := buildHandler(args, newTestMetrics())
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer/receive?partition=20260701",
+		streamOf(t, makeSnapshotDir(t)))
+	rec := do(h, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", rec.Code)
 	}
 }

@@ -1,6 +1,7 @@
-package http_handler
+package http_ops_test
 
 import (
+	http_ops "github.com/sbordeyne/vlbackup/pkg/http_ops"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,7 +10,7 @@ import (
 func TestHealthHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	HealthHandler(rec, req)
+	http_ops.HealthHandler(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Errorf("status = %d, want 200", rec.Code)
 	}
@@ -21,7 +22,7 @@ func TestHealthHandler(t *testing.T) {
 func TestReadyHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
-	ReadyHandler(rec, req)
+	http_ops.ReadyHandler(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Errorf("status = %d, want 200", rec.Code)
 	}

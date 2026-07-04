@@ -13,6 +13,7 @@ var Version = "0.0.0-dev"
 
 type Args struct {
 	Host                string  `arg:"--host,env:VLBACKUP_HOST" help:"The host to bind the HTTP server to" default:":8080"`
+	OpsHost             string  `arg:"--ops-host,env:VLBACKUP_OPS_HOST" help:"The host to bind the health/ready/metrics server to" default:":9090"`
 	VictoriaLogsURL     url.URL `arg:"--victoria-logs-url,env:VLBACKUP_VICTORIA_LOGS_URL" help:"The VictoriaLogs URL" default:"http://127.0.0.1:9428"`
 	VictoriaLogsAuthKey string  `arg:"--victoria-logs-auth-key,env:VLBACKUP_VICTORIA_LOGS_AUTH_KEY" help:"Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set" default:""`
 	DataPath            string  `arg:"--data-path,env:VLBACKUP_DATA_PATH" help:"Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath" default:"/data"`

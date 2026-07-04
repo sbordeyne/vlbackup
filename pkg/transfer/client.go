@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	RECEIVE_PATH = "/api/v1/transfer/receive"
-	ATTACH_PATH  = "/api/v1/transfer/attach"
+	RECEIVE_PATH = "/v1/vlbackup/transfer/receive"
+	ATTACH_PATH  = "/v1/vlbackup/transfer/attach"
 )
 
 // ErrConflict is returned when the target reports 409: the partition
@@ -31,7 +31,7 @@ var SnapshotPathResolver = func(path string) string { return path }
 type PeerClient struct {
 	baseURL url.URL
 	authKey string
-	http    *http.Client
+	Http    *http.Client
 }
 
 func NewPeerClient(baseURL, authKey string) (*PeerClient, error) {
@@ -49,7 +49,7 @@ func NewPeerClient(baseURL, authKey string) (*PeerClient, error) {
 		// setup is bounded, and ResponseHeaderTimeout bounds the target-side
 		// extraction (it counts from the end of the request body write).
 		// Cancellation comes from the request context.
-		http: &http.Client{
+		Http: &http.Client{
 			Transport: &http.Transport{
 				DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
 				ResponseHeaderTimeout: 10 * time.Minute,
@@ -58,7 +58,7 @@ func NewPeerClient(baseURL, authKey string) (*PeerClient, error) {
 	}, nil
 }
 
-func (c *PeerClient) newRequest(ctx context.Context, path, partition string, body io.Reader) (*http.Request, error) {
+func (c *PeerClient) NewRequest(ctx context.Context, path, partition string, body io.Reader) (*http.Request, error) {
 	u := c.baseURL.JoinPath(path)
 	u.RawQuery = url.Values{"partition": {partition}}.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), body)
@@ -71,7 +71,7 @@ func (c *PeerClient) newRequest(ctx context.Context, path, partition string, bod
 	return req, nil
 }
 
-func peerError(op string, resp *http.Response) error {
+func PeerError(op string, resp *http.Response) error {
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 	return fmt.Errorf("%s failed with status %s: %s", op, resp.Status, string(body))
 }
@@ -84,12 +84,12 @@ func (c *PeerClient) SendPartition(ctx context.Context, partition, snapshotDir s
 	go func() {
 		pw.CloseWithError(StreamDir(SnapshotPathResolver(snapshotDir), pw))
 	}()
-	req, err := c.newRequest(ctx, RECEIVE_PATH, partition, pr)
+	req, err := c.NewRequest(ctx, RECEIVE_PATH, partition, pr)
 	if err != nil {
 		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/gzip")
-	resp, err := c.http.Do(req)
+	resp, err := c.Http.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -106,23 +106,23 @@ func (c *PeerClient) SendPartition(ctx context.Context, partition, snapshotDir s
 	case http.StatusConflict:
 		return 0, ErrConflict
 	default:
-		return 0, peerError("transfer receive", resp)
+		return 0, PeerError("transfer receive", resp)
 	}
 }
 
 // Attach asks the target to attach the partition to its VictoriaLogs instance.
 func (c *PeerClient) Attach(ctx context.Context, partition string) error {
-	req, err := c.newRequest(ctx, ATTACH_PATH, partition, nil)
+	req, err := c.NewRequest(ctx, ATTACH_PATH, partition, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := c.http.Do(req)
+	resp, err := c.Http.Do(req)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return peerError("transfer attach", resp)
+		return PeerError("transfer attach", resp)
 	}
 	return nil
 }

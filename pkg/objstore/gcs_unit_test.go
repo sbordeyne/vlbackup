@@ -1,4 +1,4 @@
-package objstore
+package objstore_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	objstore "github.com/sbordeyne/vlbackup/pkg/objstore"
 )
 
 // TestNewGCSRepositoryClientError forces storage.NewClient to fail by pointing
@@ -15,7 +17,7 @@ func TestNewGCSRepositoryClientError(t *testing.T) {
 	t.Setenv("STORAGE_EMULATOR_HOST", "")
 	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", filepath.Join(t.TempDir(), "no-such-creds.json"))
 	u, _ := url.Parse("gs://bucket")
-	if _, err := newGCSRepository(context.Background(), u); err == nil ||
+	if _, err := objstore.NewGCSRepository(context.Background(), u); err == nil ||
 		!strings.Contains(err.Error(), "creating GCS client") {
 		t.Errorf("err = %v, want GCS client creation error", err)
 	}

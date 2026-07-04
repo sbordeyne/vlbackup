@@ -7,14 +7,15 @@ import (
 	"time"
 )
 
-// TestMainSmoke boots the server via main() on a loopback port and confirms it
-// serves /healthz. main() blocks on ListenAndServe, so it runs in a goroutine
-// that is intentionally left running when the test returns.
+// TestMainSmoke boots the server via main() and confirms the ops server serves
+// /healthz. main() blocks on ListenAndServe, so it runs in a goroutine that is
+// intentionally left running when the test returns.
 func TestMainSmoke(t *testing.T) {
 	oldArgs := os.Args
 	t.Cleanup(func() { os.Args = oldArgs })
 	os.Args = []string{"vlbackup"}
-	t.Setenv("HOST", "127.0.0.1:18099")
+	t.Setenv("VLBACKUP_HOST", "127.0.0.1:18098")
+	t.Setenv("VLBACKUP_OPS_HOST", "127.0.0.1:18099")
 
 	go main()
 
