@@ -308,24 +308,34 @@ components:
             - $ref: '#/components/schemas/TransferRange'
     TransferRange:
       type: object
-      description: An inclusive range of time expressed as RFC3339 timestamps.
+      description: >-
+        An inclusive range of time. Each bound is a time expression of the form
+        `<anchor>[+-<duration>][/<rounding>]`, where the anchor is `now` or an
+        RFC3339 date, the optional duration is `<int><unit>` (e.g. `-7d`,
+        `+12h`), and the optional `/<unit>` rounds the result down to that unit.
+        Units: `y` (year), `M` (month), `w` (week, starts Monday), `d` (day),
+        `h` (hour), `m` (minute), `s` (second). All math is performed in UTC.
       required:
         - from
       properties:
         from:
           type: string
-          format: date-time
-          minLength: 20
+          minLength: 3
           maxLength: 64
-          description: Start of the range (RFC3339), inclusive
-          example: '2024-01-01T00:00:00Z'
+          description: >-
+            Start of the range, inclusive. A relative or absolute time
+            expression (e.g. `now-7d/d`, `2024-01-01T00:00:00Z`).
+          pattern: ^(now|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))(\|\|)?([+-]\d+[yMwdhms])?(/[yMwdhms])?$
+          example: now-7d/d
         to:
           type: string
-          format: date-time
-          minLength: 20
+          minLength: 3
           maxLength: 64
-          description: End of the range (RFC3339), inclusive. Defaults to now.
-          example: '2024-01-15T00:00:00Z'
+          description: >-
+            End of the range, inclusive. A relative or absolute time expression
+            (e.g. `now/d`, `2024-01-15T00:00:00Z`). Defaults to now.
+          pattern: ^(now|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))(\|\|)?([+-]\d+[yMwdhms])?(/[yMwdhms])?$
+          example: now/d
     TransferResponse:
       type: object
       description: The outcome of a transfer request, per day.

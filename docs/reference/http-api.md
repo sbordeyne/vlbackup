@@ -73,8 +73,8 @@ Transfers per-day partitions from this ("source") VictoriaLogs to another ("targ
 {
   "target_url": "http://vlbackup-target:8080",
   "range": {
-    "from": "2026-07-01T00:00:00Z",
-    "to": "2026-07-03T00:00:00Z"
+    "from": "now-7d/d",
+    "to": "now/d"
   }
 }
 ```
@@ -82,8 +82,16 @@ Transfers per-day partitions from this ("source") VictoriaLogs to another ("targ
 | Field        | Required | Description                              |
 | ------------ | -------- | ---------------------------------------- |
 | `target_url` | yes      | Base URL of the target vlbackup sidecar. |
-| `range.from` | yes      | Start of the range (RFC 3339).           |
+| `range.from` | yes      | Start of the range (time expression).    |
 | `range.to`   | no       | End of the range. Defaults to now.       |
+
+Each bound is a **time expression** `<anchor>[+-<duration>][/<rounding>]`:
+
+- `anchor` (required): `now` or an RFC3339 date.
+- `duration` (optional): `<int><unit>`, e.g. `-7d`, `+12h`.
+- `rounding` (optional): `/<unit>`, truncates the result **down** to that unit.
+
+Units: `y` (year), `M` (month), `w` (week, starts Monday), `d` (day), `h` (hour), `m` (minute), `s` (second). All math is in UTC. Examples: `now-7d/d` (start of 7 days ago), `now/d` (start of today), `2026-07-01T00:00:00Z`, `2026-07-01T00:00:00Z-2d/d`.
 
 The range is interpreted as UTC days `[from, to)`. **Today's active partition is never transferred** — only sealed days strictly before today UTC are eligible.
 
@@ -92,7 +100,7 @@ The range is interpreted as UTC days `[from, to)`. **Today's active partition is
 ```sh
 curl -sL -XPOST http://vlbackup-source:8080/v1/vlbackup/transfer \
   -H "Content-Type: application/json" \
-  -d '{"target_url": "http://vlbackup-target:8080", "range": {"from": "2026-07-01T00:00:00Z"}}'
+  -d '{"target_url": "http://vlbackup-target:8080", "range": {"from": "now-7d/d"}}'
 ```
 
 ### Response

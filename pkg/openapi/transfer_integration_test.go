@@ -208,7 +208,7 @@ func TestTransferIntegration(t *testing.T) {
 	body, _ := json.Marshal(openapi.TransferRequest{
 		TargetUrl: targetSrv.URL,
 		Range: openapi.TransferRange{
-			From: time.Now().UTC().AddDate(0, 0, -2),
+			From: time.Now().UTC().AddDate(0, 0, -2).Format(time.RFC3339),
 		},
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(body))
@@ -287,11 +287,11 @@ func TestTransferIntegration(t *testing.T) {
 		waitForFlushedData(t, sourceDir, conflictPartition)
 		waitForFlushedData(t, targetDir, conflictPartition)
 
-		to := conflictDay.AddDate(0, 0, 1)
+		to := conflictDay.AddDate(0, 0, 1).Format(time.RFC3339)
 		body, _ := json.Marshal(openapi.TransferRequest{
 			TargetUrl: targetSrv.URL,
 			Range: openapi.TransferRange{
-				From: conflictDay,
+				From: conflictDay.Format(time.RFC3339),
 				To:   &to,
 			},
 		})

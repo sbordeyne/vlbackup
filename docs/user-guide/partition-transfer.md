@@ -33,7 +33,8 @@ sequenceDiagram
 
 ## Range semantics
 
-- `range.from` is required; `range.to` is optional and defaults to today.
+- `range.from` is required; `range.to` is optional and defaults to now.
+- Each bound is a time expression `<anchor>[+-<duration>][/<rounding>]` — `anchor` is `now` or an RFC3339 date, followed by optional `<int><unit>` math and an optional `/<unit>` that rounds down. Units: `y M w d h m s` (week starts Monday), evaluated in UTC. E.g. `now-7d/d`, `now/d`, `2026-07-01T00:00:00Z`.
 - The range is interpreted as UTC days `[from, to)`.
 - **Today's (active) partition is never transferred** — only sealed days strictly before today UTC are eligible.
 

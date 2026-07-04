@@ -130,17 +130,13 @@ func lastDays(n int) []string {
 	return days
 }
 
-// transferBody builds a TransferRequest JSON body from a target URL and an
-// RFC3339 "from" timestamp.
+// transferBody builds a TransferRequest JSON body from a target URL and a
+// "from" time expression (RFC3339 or relative, e.g. "now-3d/d").
 func transferBody(t *testing.T, targetURL, from string) []byte {
 	t.Helper()
-	fromT, err := time.Parse(time.RFC3339, from)
-	if err != nil {
-		t.Fatal(err)
-	}
 	body, _ := json.Marshal(openapi.TransferRequest{
 		TargetUrl: targetURL,
-		Range:     openapi.TransferRange{From: fromT},
+		Range:     openapi.TransferRange{From: from},
 	})
 	return body
 }
@@ -162,18 +158,51 @@ func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (*httpt
 	return rec, resp
 }
 
-func TestParseTransferRangeBadOrder(t *testing.T) {
-	from := time.Date(2026, 7, 3, 0, 0, 0, 0, time.UTC)
-	to := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
-	if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: from, To: &to}); err == nil {
-		t.Error("parseTransferRange err = nil, want from-after-to error")
-	}
-}
+func TestParseTransferRange(t *testing.T) {
+	now := time.Date(2024, 1, 17, 15, 30, 45, 0, time.UTC)
+	to := "2024-01-10T00:00:00Z"
 
-func TestParseTransferRangeMissingFrom(t *testing.T) {
-	if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{}); err == nil {
-		t.Error("parseTransferRange err = nil, want range.from required")
-	}
+	t.Run("relative from and to resolved against now", func(t *testing.T) {
+		toExpr := "now/d"
+		from, gotTo, err := openapi.ParseTransferRange(openapi.TransferRange{From: "now-7d/d", To: &toExpr}, now)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !from.Equal(time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)) {
+			t.Errorf("from = %s, want 2024-01-10T00:00:00Z", from.Format(time.RFC3339))
+		}
+		if !gotTo.Equal(time.Date(2024, 1, 17, 0, 0, 0, 0, time.UTC)) {
+			t.Errorf("to = %s, want 2024-01-17T00:00:00Z", gotTo.Format(time.RFC3339))
+		}
+	})
+
+	t.Run("missing to defaults to now", func(t *testing.T) {
+		_, gotTo, err := openapi.ParseTransferRange(openapi.TransferRange{From: "now-1d"}, now)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !gotTo.Equal(now) {
+			t.Errorf("to = %s, want now %s", gotTo.Format(time.RFC3339), now.Format(time.RFC3339))
+		}
+	})
+
+	t.Run("bad order errors", func(t *testing.T) {
+		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: "2026-07-03T00:00:00Z", To: &to}, now); err == nil {
+			t.Error("err = nil, want from-after-to error")
+		}
+	})
+
+	t.Run("missing from errors", func(t *testing.T) {
+		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{}, now); err == nil {
+			t.Error("err = nil, want range.from required")
+		}
+	})
+
+	t.Run("invalid from expression errors", func(t *testing.T) {
+		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: "yesterday"}, now); err == nil {
+			t.Error("err = nil, want invalid expression error")
+		}
+	})
 }
 
 func TestTransferHandler(t *testing.T) {

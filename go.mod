@@ -13,6 +13,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/prometheus/client_golang v1.23.2
 	github.com/testcontainers/testcontainers-go v0.43.0
+	github.com/timberio/go-datemath v0.1.0
 	google.golang.org/api v0.265.0
 )
 

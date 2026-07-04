@@ -4,23 +4,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/sbordeyne/vlbackup/pkg/timeexpr"
 	"github.com/sbordeyne/vlbackup/pkg/transfer"
 	"github.com/sbordeyne/vlbackup/pkg/victoriametrics"
 )
 
-// ParseTransferRange resolves the inclusive [from, to] window, defaulting the
-// end to now and validating ordering.
-func ParseTransferRange(rng TransferRange) (from, to time.Time, err error) {
-	from = rng.From
-	if from.IsZero() {
+// ParseTransferRange resolves the inclusive [from, to] window. Both bounds are
+// relative-or-absolute time expressions (see timeexpr.Parse) evaluated against
+// now; a missing `to` defaults to now. It validates presence and ordering.
+func ParseTransferRange(rng TransferRange, now time.Time) (from, to time.Time, err error) {
+	if strings.TrimSpace(rng.From) == "" {
 		return from, to, errors.New("range.from is required")
 	}
-	if rng.To != nil {
-		to = *rng.To
+	if from, err = timeexpr.Parse(rng.From, now); err != nil {
+		return from, to, fmt.Errorf("range.from: %w", err)
+	}
+	if rng.To != nil && strings.TrimSpace(*rng.To) != "" {
+		if to, err = timeexpr.Parse(*rng.To, now); err != nil {
+			return from, to, fmt.Errorf("range.to: %w", err)
+		}
 	} else {
-		to = time.Now()
+		to = now
 	}
 	if from.After(to) {
 		return from, to, errors.New("range.from must be before range.to")
@@ -37,11 +44,12 @@ func (s *Server) TransferPartitions(ctx context.Context, request TransferPartiti
 		s.metrics.TransferDuration.WithLabelValues(partition, stage).Observe(time.Since(start).Seconds())
 	}
 
-	from, to, err := ParseTransferRange(request.Body.Range)
+	now := time.Now()
+	from, to, err := ParseTransferRange(request.Body.Range, now)
 	if err != nil {
 		return TransferPartitions400JSONResponse(errorResponse(err, 400)), nil
 	}
-	days, err := transfer.DaysInRange(from, to, time.Now())
+	days, err := transfer.DaysInRange(from, to, now)
 	if err != nil {
 		return TransferPartitions400JSONResponse(errorResponse(err, 400)), nil
 	}
