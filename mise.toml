@@ -1,0 +1,13 @@
+[tools]
+go = "1.26.4"
+goreleaser = "latest"
+
+[env]
+CGO_ENABLED = "0"
+
+
+[tasks."build:go"]
+run = "go build -o dist/vlbackup main.go"
+
+[tasks."build:docker"]
+run = ""
