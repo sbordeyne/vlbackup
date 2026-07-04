@@ -93,7 +93,7 @@ func (c *PeerClient) SendPartition(ctx context.Context, partition, snapshotDir s
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	switch resp.StatusCode {
 	case http.StatusOK:
 		var parsed struct {
@@ -120,7 +120,7 @@ func (c *PeerClient) Attach(ctx context.Context, partition string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return peerError("transfer attach", resp)
 	}

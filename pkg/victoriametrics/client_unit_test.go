@@ -16,7 +16,7 @@ func vmServer(t *testing.T, status int, body string) *victoriametrics.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
-		w.Write([]byte(body))
+		_, _ = w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
 	c, err := victoriametrics.NewClient(context.Background(), srv.URL)
@@ -47,7 +47,7 @@ func TestNewClientBadURL(t *testing.T) {
 // any network call.
 func TestRequestBuildErrors(t *testing.T) {
 	//nolint:staticcheck // deliberately passing a nil context to force the error path
-	c, err := victoriametrics.NewClient(nil, "http://127.0.0.1:1")
+	c, err := victoriametrics.NewClient(t.Context(), "http://127.0.0.1:1")
 	if err != nil {
 		t.Fatal(err)
 	}

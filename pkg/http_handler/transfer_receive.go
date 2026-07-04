@@ -60,7 +60,7 @@ func TransferReceiveHandlerFactory(args cli.Args, m *metrics.Metrics) http.Handl
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		defer os.RemoveAll(tmpDir)
+		defer func() { _ = os.RemoveAll(tmpDir) }()
 		written, err := transfer.ExtractDir(r.Body, tmpDir)
 		if err != nil {
 			log.Errorf("failed to extract partition %s: %v", partition, err)

@@ -21,7 +21,7 @@ var memUploadErr error
 type memRepo struct{}
 
 func (memRepo) Upload(ctx context.Context, key string, r io.Reader) error {
-	io.Copy(io.Discard, r)
+	_, _ = io.Copy(io.Discard, r)
 	return memUploadErr
 }
 func (memRepo) Download(ctx context.Context, key string) (io.ReadCloser, error) {
@@ -45,7 +45,7 @@ func vlSnapshotServer(t *testing.T, createStatus int, createBody string, deleteS
 	mux := http.NewServeMux()
 	mux.HandleFunc("/internal/partition/snapshot/create", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(createStatus)
-		io.WriteString(w, createBody)
+		_, _ = io.WriteString(w, createBody)
 	})
 	mux.HandleFunc("/internal/partition/snapshot/delete", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(deleteStatus)

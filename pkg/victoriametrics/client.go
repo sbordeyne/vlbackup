@@ -49,7 +49,7 @@ func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, erro
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to create snapshot: %s", response.Status)
 	}
@@ -78,7 +78,7 @@ func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("failed to delete snapshot: %s", response.Status)
 	}
@@ -100,7 +100,7 @@ func (c *Client) DeleteStaleSnapshots(authKey string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("failed to delete stale snapshots: %s", response.Status)
 	}
@@ -123,7 +123,7 @@ func (c *Client) DetachPartition(partitionName, authKey string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to detach partition: %s", response.Status)
 	}
@@ -146,7 +146,7 @@ func (c *Client) AttachPartition(partitionName, authKey string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to attach partition: %s", response.Status)
 	}
@@ -163,7 +163,7 @@ func (c *Client) ListPartitions(authKey string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to list partitions: %s", response.Status)
 	}
@@ -187,7 +187,7 @@ func (c *Client) ListSnapshots(authKey string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to list snapshots: %s", response.Status)
 	}

@@ -20,8 +20,8 @@ func TestStreamDirNonexistentRoot(t *testing.T) {
 func TestExtractDirTarError(t *testing.T) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
-	gz.Write([]byte("this is valid gzip but not a tar archive at all"))
-	gz.Close()
+	_, _ = gz.Write([]byte("this is valid gzip but not a tar archive at all"))
+	_ = gz.Close()
 	if _, err := ExtractDir(&buf, t.TempDir()); err == nil {
 		t.Error("ExtractDir on non-tar gzip err = nil, want error")
 	}

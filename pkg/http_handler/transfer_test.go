@@ -204,14 +204,14 @@ func (f *fakeVL) server(t *testing.T) *httptest.Server {
 			return
 		}
 		if f.emptyDays[day] {
-			fmt.Fprint(w, "[]")
+			_, _ = fmt.Fprint(w, "[]")
 			return
 		}
 		if f.multiDays[day] {
-			json.NewEncoder(w).Encode([]string{f.snapshotDir, f.snapshotDir})
+			_ = json.NewEncoder(w).Encode([]string{f.snapshotDir, f.snapshotDir})
 			return
 		}
-		json.NewEncoder(w).Encode([]string{f.snapshotDir})
+		_ = json.NewEncoder(w).Encode([]string{f.snapshotDir})
 	})
 	mux.HandleFunc("/internal/partition/detach", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
@@ -250,7 +250,7 @@ func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/transfer/receive", func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
+		_, _ = io.Copy(io.Discard, r.Body)
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		day := r.URL.Query().Get("partition")
@@ -263,7 +263,7 @@ func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 			return
 		}
 		f.received = append(f.received, day)
-		fmt.Fprint(w, `{"bytes_written": 42}`)
+		_, _ = fmt.Fprint(w, `{"bytes_written": 42}`)
 	})
 	mux.HandleFunc("/api/v1/transfer/attach", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
@@ -274,7 +274,7 @@ func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 			return
 		}
 		f.attached = append(f.attached, day)
-		fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)

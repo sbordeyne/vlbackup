@@ -58,6 +58,13 @@ func startVictoriaLogsWithVolume(t *testing.T, hostDir string) string {
 				"-inmemoryDataFlushInterval=1s",
 			},
 			ExposedPorts: []string{"9428/tcp"},
+			// Run as the test process's uid:gid so files VictoriaLogs writes
+			// into the bind-mounted /data (notably the "partitions" subdir it
+			// creates) are owned by us, not root. Otherwise the in-process
+			// receive handler can't MkdirTemp under partitions on Linux CI.
+			ConfigModifier: func(cfg *container.Config) {
+				cfg.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+			},
 			HostConfigModifier: func(hc *container.HostConfig) {
 				hc.Binds = append(hc.Binds, hostDir+":"+containerDataPath)
 			},
@@ -89,7 +96,7 @@ func ingestLogs(t *testing.T, baseURL string, day time.Time, count int) {
 	if err != nil {
 		t.Fatalf("failed to ingest logs: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("failed to ingest logs: %s", resp.Status)
 	}
@@ -264,7 +271,7 @@ func TestTransferIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer queryResp.Body.Close()
+	defer func() { _ = queryResp.Body.Close() }()
 	queryBody, _ := io.ReadAll(queryResp.Body)
 	lines := 0
 	for line := range bytes.SplitSeq(queryBody, []byte("\n")) {

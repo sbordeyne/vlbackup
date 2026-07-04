@@ -128,7 +128,7 @@ func TestTriggerIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 	wantKey := prefix + "/" + partition + ".tar.gz"
 	found := false
 	for info, err := range repo.List(context.Background(), prefix) {
@@ -152,7 +152,7 @@ func TestTriggerIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Download: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 	extractDir := t.TempDir()
 	if _, err := transfer.ExtractDir(r, extractDir); err != nil {
 		t.Fatalf("ExtractDir: %v", err)

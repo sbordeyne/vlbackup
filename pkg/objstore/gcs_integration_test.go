@@ -53,7 +53,7 @@ func startFakeGCS(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("failed to update fake-gcs external URL: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("failed to update fake-gcs external URL: %s", resp.Status)
 	}
@@ -74,7 +74,7 @@ func TestGCSIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	if err := client.Bucket("test-bucket").Create(ctx, "test-project", nil); err != nil {
 		t.Fatalf("failed to create bucket: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestGCSIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 	if prefix != "" {
 		t.Errorf("prefix = %q, want empty", prefix)
 	}

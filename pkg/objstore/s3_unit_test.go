@@ -26,7 +26,7 @@ func TestNewS3RepositoryDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 	if r := repo.(*s3Repository); r.bucket != "my-bucket" {
 		t.Errorf("bucket = %q, want my-bucket", r.bucket)
 	}
@@ -51,5 +51,5 @@ func TestNewS3RepositoryCustomEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	t.Cleanup(func() { repo.Close() })
+	t.Cleanup(func() { _ = repo.Close() })
 }

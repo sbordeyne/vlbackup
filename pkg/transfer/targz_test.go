@@ -150,8 +150,8 @@ func TestExtractDirRejectsSpecialEntries(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	tw.Close()
-	gz.Close()
+	_ = tw.Close()
+	_ = gz.Close()
 	if _, err := ExtractDir(&buf, t.TempDir()); err == nil {
 		t.Error("ExtractDir accepted a symlink entry, want error")
 	}

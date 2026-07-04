@@ -57,7 +57,7 @@ func StreamDir(root string, w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		_, err = io.Copy(tw, f)
 		return err
 	})
@@ -78,7 +78,7 @@ func ExtractDir(r io.Reader, dest string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 	tr := tar.NewReader(gz)
 	cleanDest := filepath.Clean(dest)
 	var written int64

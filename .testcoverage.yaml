@@ -1,0 +1,9 @@
+---
+profile: coverage.out
+threshold:
+  file: 70
+  package: 80
+  total: 90
+force-annotation-comment: true
+diff:
+  threshold: -1

@@ -27,7 +27,7 @@ func TestMainSmoke(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("/healthz status = %d, want 200", resp.StatusCode)
 		}
