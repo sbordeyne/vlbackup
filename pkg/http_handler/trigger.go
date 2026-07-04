@@ -1,20 +1,23 @@
 package http_handler
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
+	"path"
+	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/op/go-logging"
 	"github.com/sbordeyne/vlbackup/pkg/cli"
 	"github.com/sbordeyne/vlbackup/pkg/metrics"
+	"github.com/sbordeyne/vlbackup/pkg/objstore"
+	"github.com/sbordeyne/vlbackup/pkg/transfer"
 	"github.com/sbordeyne/vlbackup/pkg/victoriametrics"
 )
 
@@ -34,7 +37,7 @@ func parseRequestBody(body io.ReadCloser) (TriggerRequestBody, error) {
 	// partition_prefix, used to dictate which snapshot to take, its optional, if not
 	// found, it'll default to yesterday UTC
 	// destination_url on the other hand is required and will be an URL in the form
-	// gs://bucket_name/pathprefix/
+	// scheme://bucket_name/pathprefix/ (e.g. gs:// or s3://)
 	decoder := json.NewDecoder(body)
 	yesterday := time.Now().Add(-time.Hour * 24).Format("20060102")
 	parsed := TriggerRequestBody{
@@ -55,32 +58,17 @@ func handleError(w http.ResponseWriter, err error, partitionPrefix string, metri
 	metrics.SnapshotCount.WithLabelValues(partitionPrefix, "false").Inc()
 }
 
-func copyToStorage(storageClient *storage.Client, snapshotPath string, destURL *url.URL, ctx context.Context) error {
-	if destURL.Scheme != "gs" {
-		return fmt.Errorf("unsupported destination URL scheme: %s", destURL.Scheme)
+// partitionFromSnapshotPath extracts the partition name (YYYYMMDD) from a
+// VictoriaLogs snapshot path like <dataPath>/partitions/<YYYYMMDD>/snapshots/<id>,
+// falling back to the path's base name if the layout is unexpected.
+func partitionFromSnapshotPath(p string) string {
+	segments := strings.Split(filepath.ToSlash(p), "/")
+	for i, segment := range segments {
+		if segment == "partitions" && i+1 < len(segments) {
+			return segments[i+1]
+		}
 	}
-	storageWriter := storageClient.Bucket(destURL.Host).Object(destURL.Path).NewWriter(ctx)
-	snapshotFile, err := os.Open(snapshotPath)
-	if err != nil {
-		return err
-	}
-	var snapshotFileContents []byte
-	log.Infof("Reading snapshot file at %s", snapshotPath)
-	_, err = snapshotFile.Read(snapshotFileContents)
-	if err != nil {
-		return err
-	}
-	log.Infof("Uploading snapshot file %s to GCS %s", snapshotPath, destURL.String())
-	_, err = storageWriter.Write(snapshotFileContents)
-	if err != nil {
-		return err
-	}
-	log.Infof("Finished uploading snapshot file %s to GCS %s, closing storage writer", snapshotPath, destURL.String())
-	err = storageWriter.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+	return filepath.Base(p)
 }
 
 func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.ResponseWriter, r *http.Request) {
@@ -95,16 +83,21 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 			return
 		}
 		metrics.SnapshotDuration.WithLabelValues(body.PartitionPrefix, "parse_request_body").Observe(time.Since(startTime).Abs().Seconds())
+		repo, keyPrefix, err := objstore.Open(r.Context(), body.DestinationURL)
+		if err != nil {
+			status := http.StatusInternalServerError
+			if errors.Is(err, objstore.ErrUnsupportedScheme) {
+				status = http.StatusBadRequest
+			}
+			handleError(w, err, body.PartitionPrefix, metrics, status)
+			return
+		}
+		defer repo.Close()
+		log.Infof("opened storage repository for destination %s", body.DestinationURL)
 		vmClient, err := victoriametrics.NewClient(r.Context(), args.VictoriaLogsURL.String())
 		log.Info("initialized vmClient")
 		if err != nil {
 			handleError(w, err, body.PartitionPrefix, metrics, http.StatusInternalServerError)
-			return
-		}
-		destURL, err := url.Parse(body.DestinationURL)
-		log.Infof("parsed destination url as %#v", destURL)
-		if err != nil {
-			handleError(w, err, body.PartitionPrefix, metrics, http.StatusBadRequest)
 			return
 		}
 		snapshotPaths, err := vmClient.CreateSnapshot(body.PartitionPrefix, args.VictoriaLogsAuthKey)
@@ -119,19 +112,15 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 			metrics.SnapshotCount.WithLabelValues(body.PartitionPrefix, "true").Inc()
 			return
 		}
-		if destURL.Scheme != "gs" {
-			handleError(w, fmt.Errorf("unsupported destination URL scheme: %s, destUrl: %s", destURL.Scheme, destURL.String()), body.PartitionPrefix, metrics, http.StatusBadRequest)
-			return
-		}
-		storageClient, err := storage.NewClient(r.Context())
-		if err != nil {
-			handleError(w, err, body.PartitionPrefix, metrics, http.StatusInternalServerError)
-			return
-		}
 		for _, snapshotPath := range snapshotPaths {
-			log.Infof("Copying snapshot %s to storage with destination URL %s", snapshotPath, destURL.String())
-			err = copyToStorage(storageClient, snapshotPath, destURL, r.Context())
-			if err != nil {
+			key := path.Join(keyPrefix, partitionFromSnapshotPath(snapshotPath)+".tar.gz")
+			log.Infof("Uploading snapshot %s to %s as %s", snapshotPath, body.DestinationURL, key)
+			pr, pw := io.Pipe()
+			go func() {
+				pw.CloseWithError(transfer.StreamDir(transfer.SnapshotPathResolver(snapshotPath), pw))
+			}()
+			if err := repo.Upload(r.Context(), key, pr); err != nil {
+				pr.CloseWithError(err)
 				handleError(w, err, body.PartitionPrefix, metrics, http.StatusInternalServerError)
 				return
 			}

@@ -61,6 +61,7 @@ services:
     environment:
       DATAPATH: /data
       TRANSFERAUTHKEY: demo-token
+      STORAGE_EMULATOR_HOST: fake-gcs:4443
     volumes:
       - "./victorialogs-data:/data"
   vlbackup-target:

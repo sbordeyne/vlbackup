@@ -1,6 +1,6 @@
 # VLBackup
 
-A go program to handle VictoriaLogs backups to Google Cloud Storage, and partition transfers between VictoriaLogs instances.
+A go program to handle VictoriaLogs backups to object storage (Google Cloud Storage or any S3-compatible store), and partition transfers between VictoriaLogs instances.
 
 ## CLI arguments
 
@@ -25,7 +25,7 @@ Options:
 
 ### `POST /snapshot`
 
-Triggers a snapshot for the given partition prefix and the given destination
+Triggers a snapshot for the given partition prefix and uploads it to the given destination
 
 ```sh
 curl -sL -XPOST http://vlbackup:8080/snapshot -H "Content-Type: application/json" -d '{
@@ -33,6 +33,33 @@ curl -sL -XPOST http://vlbackup:8080/snapshot -H "Content-Type: application/json
   "partition_prefix": "20060102"
 }'
 ```
+
+The storage backend is selected from the `destination_url` scheme (see [Object storage backends](#object-storage-backends)). Each snapshot is streamed as one tar.gz object named `<pathprefix>/<partition>.tar.gz` (e.g. `path/to/folder/20060102.tar.gz`); re-running a snapshot for the same partition overwrites the object.
+
+## Object storage backends
+
+The destination URL scheme picks the backend; bucket name is the URL host, and the URL path is used as a key prefix. Backends are configured through environment variables only.
+
+### `gs://` — Google Cloud Storage
+
+Uses Application Default Credentials.
+
+| env var | description |
+| --- | --- |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account key file (or use workload identity) |
+| `STORAGE_EMULATOR_HOST` | Optional `host:port` of a GCS emulator such as fake-gcs-server |
+
+### `s3://` — AWS S3 and S3-compatible stores (MinIO, Ceph, R2, ...)
+
+| env var | description |
+| --- | --- |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Access credentials |
+| `AWS_SESSION_TOKEN` | Optional session token |
+| `AWS_REGION` | Optional region (auto-detected when unset) |
+| `S3_ENDPOINT` | `host[:port]` of the endpoint, default `s3.amazonaws.com` |
+| `S3_USE_SSL` | `true`/`false`, default `true` |
+
+Adding another backend is a single file in `pkg/objstore` implementing the `Repository` interface and registering its URL scheme via `objstore.Register` in `init()`.
 
 ### `POST /api/v1/transfer`
 
