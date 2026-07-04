@@ -96,6 +96,7 @@ jobs:
           name: master.breakdown
           if_no_artifact_found: warn
       - name: Run tests with coverage
+        id: run-tests
         run: |
           go test ./... -coverprofile=coverage.out -covermode=atomic -coverpkg=./...
       - name: check test coverage
@@ -113,25 +114,14 @@ jobs:
           name: master.breakdown
           path: master.breakdown  # as specified via `breakdown-file-name`
           if-no-files-found: error
-      - name: find pull request ID
-        run: |
-          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.ref_name }}&state=open")
-          PR_ID=$(echo "$PR_DATA" | jq -r '.[0].number')
-          if [ "$PR_ID" != "null" ]; then
-            echo "pull_request_id=$PR_ID" >> $GITHUB_ENV
-          else
-            echo "No open pull request found for this branch."
-          fi
-      - name: post coverage report
-        if: env.pull_request_id
-        uses: thollander/actions-comment-pull-request@v3
+      - name: Post coverage report comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0  # v3.0.4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-tag: coverage-report
-          pr-number: ${{ env.pull_request_id }}
+          header: Coverage Report
+          recreate: true
           message: |
-            go-test-coverage report:
+            ### Coverage Report
             ```
             ${{ fromJSON(steps.coverage.outputs.report) }}```
       - name: finally check coverage
