@@ -1,5 +1,6 @@
 [tools]
 go = "1.26.4"
+node = "22"
 goreleaser = "latest"
 uv = "latest"
 "pipx:properdocs" = { version = "latest", uvx_args = """
@@ -28,6 +29,10 @@ pre-commit = "latest"
 tombi = "latest"
 golangci-lint = "v2.12.2"
 "go:github.com/vladopajic/go-test-coverage/v2" = "v2.18.8"
+"aqua:grafana/alloy" = "latest"
+"npm:ibm-openapi-validator" = "latest"
+"pipx:commitizen" = "latest"
+oapi-codegen = "latest"
 
 [env]
 CGO_ENABLED = "0"
@@ -53,6 +58,22 @@ run = "markdownlint-cli2 --config .markdownlint.yaml '**/*.md'"
 
 [tasks."lint:yaml"]
 run = "yamllint --config-file=.yamllint.yaml ."
+
+[tasks."lint:openapi"]
+description = "Lint OpenAPI specifications"
+run = '''
+  set -eu
+  # The .spectral.yaml ruleset extends @ibm-cloud/openapi-ruleset, installed
+  # as a dev dependency, so make sure node_modules is present first.
+  [ -d node_modules ] || npm ci
+  for spec in openapi/*.yaml; do
+    lint-openapi "${spec}"
+  done
+'''
+
+[tasks."gen:openapi"]
+description = "Generate source files from OpenAPI specifications"
+run = 'oapi-codegen --config .oapi-codegen.yaml openapi/schema.yaml'
 
 [tasks."fix:yaml"]
 run = "yamlfix -c .yamlfix.toml ."

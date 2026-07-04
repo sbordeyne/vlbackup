@@ -1,0 +1,458 @@
+---
+openapi: 3.0.3
+info:
+  title: VLBackup API
+  description: API that handles snapshotting, transferring and restoring VictoriaLogs
+    partitions.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Internal
+tags:
+  - name: snapshot
+    description: Snapshot VictoriaLogs partitions to Object Storage
+  - name: transfer
+    description: Transfer snapshots between vlbackup instances
+  - name: restore
+    description: Restore VictoriaLogs partitions from snapshots
+paths:
+  /v1/vlbackup/snapshot:
+    post:
+      tags:
+        - snapshot
+      summary: Snapshot a partition to Object Storage
+      description: >-
+        Creates a VictoriaLogs snapshot of the requested partition, streams it as
+        a
+        tar.gz to the destination Object Storage bucket, and deletes the local snapshot.
+      operationId: trigger_snapshot
+      requestBody:
+        description: Snapshot request parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+      responses:
+        '202':
+          description: >-
+            Snapshot request accepted. The snapshot was created and uploaded, or the
+            partition held no data to copy (an empty acknowledgement in that case).
+        '400':
+          description: Bad request, e.g. malformed body or unsupported destination
+            URL scheme
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while creating or uploading the snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/vlbackup/transfer:
+    post:
+      tags:
+        - transfer
+      summary: Transfer partitions to another vlbackup instance
+      description: >-
+        For each sealed day in the requested range, snapshots the local partition,
+        streams
+        it to the target vlbackup, detaches it locally and asks the target to attach
+        it.
+      operationId: transfer_partitions
+      requestBody:
+        description: Transfer request parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Transfer completed with no hard errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+              example:
+                transferred:
+                  - '20240113'
+                  - '20240114'
+                skipped:
+                  - '20240112'
+                errors: []
+        '400':
+          description: Bad request, e.g. malformed body, invalid range or invalid
+            target URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: One or more days failed to transfer; the response lists per-day
+            errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+  /v1/vlbackup/transfer/receive:
+    post:
+      tags:
+        - transfer
+      summary: Receive a snapshot from another vlbackup instance
+      description: >-
+        Receives a tar.gz stream of a partition snapshot from another vlbackup instance
+        and extracts it into the local data path, ready to be attached.
+      operationId: receive_snapshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PartitionQueryParam'
+      requestBody:
+        description: The gzipped tar stream of the partition snapshot
+        required: true
+        content:
+          application/gzip:
+            schema:
+              type: string
+              format: binary
+              minLength: 1
+              maxLength: 1099511627776
+              description: The gzipped tar archive of the partition snapshot directory
+      responses:
+        '200':
+          description: Snapshot received and extracted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiveResponse'
+              example:
+                partition: '20240115'
+                bytes_written: 4194304
+        '400':
+          description: Bad request, e.g. missing or invalid partition, or a corrupt
+            stream
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized, missing or invalid bearer auth key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict, the partition already exists on this instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while extracting the snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/vlbackup/transfer/attach:
+    post:
+      tags:
+        - transfer
+      summary: Attach a received partition to VictoriaLogs
+      description: >-
+        Attaches a previously received partition to the local VictoriaLogs instance.
+      operationId: attach_snapshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PartitionQueryParam'
+      responses:
+        '200':
+          description: Partition attached successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachResponse'
+              example:
+                partition: '20240115'
+        '400':
+          description: Bad request, missing or invalid partition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized, missing or invalid bearer auth key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while attaching the partition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/vlbackup/restore:
+    post:
+      tags:
+        - restore
+      summary: Restore a partition from Object Storage
+      description: >-
+        Downloads a partition snapshot (a tar.gz) from the source Object Storage bucket,
+        extracts it into the local data path and attaches it to VictoriaLogs.
+      operationId: restore_snapshot
+      requestBody:
+        description: Restore request parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreRequest'
+      responses:
+        '202':
+          description: Snapshot restored and attached successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestoreResponse'
+              example:
+                partition: '20240115'
+                bytes_written: 4194304
+        '400':
+          description: Bad request, e.g. malformed body or unsupported source URL
+            scheme
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The requested snapshot was not found in Object Storage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict, the partition is already attached locally
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error while downloading or restoring the snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token matching the configured transfer auth key
+  parameters:
+    PartitionQueryParam:
+      name: partition
+      in: query
+      required: true
+      description: Partition name to operate on, formatted as YYYYMMDD
+      schema:
+        type: string
+        pattern: ^\d{8}$
+        minLength: 8
+        maxLength: 8
+        example: '20240115'
+  schemas:
+    TriggerRequest:
+      type: object
+      description: Parameters for a snapshot request.
+      required:
+        - destination_url
+      properties:
+        partition_prefix:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: Partition to snapshot, formatted as YYYYMMDD. Defaults to yesterday
+            (UTC).
+          example: '20240115'
+        destination_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Object Storage destination URL, e.g. gs://bucket/prefix/ or
+            s3://bucket/prefix/
+          example: gs://my-bucket/vlbackup/
+    TransferRequest:
+      type: object
+      description: Parameters for a transfer request.
+      required:
+        - target_url
+        - range
+      properties:
+        target_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Base URL of the target vlbackup instance to transfer partitions
+            to
+          example: http://target-vlbackup:8080
+        range:
+          description: Inclusive time range whose days will be transferred
+          allOf:
+            - $ref: '#/components/schemas/TransferRange'
+    TransferRange:
+      type: object
+      description: An inclusive range of time expressed as RFC3339 timestamps.
+      required:
+        - from
+      properties:
+        from:
+          type: string
+          format: date-time
+          minLength: 20
+          maxLength: 64
+          description: Start of the range (RFC3339), inclusive
+          example: '2024-01-01T00:00:00Z'
+        to:
+          type: string
+          format: date-time
+          minLength: 20
+          maxLength: 64
+          description: End of the range (RFC3339), inclusive. Defaults to now.
+          example: '2024-01-15T00:00:00Z'
+    TransferResponse:
+      type: object
+      description: The outcome of a transfer request, per day.
+      required:
+        - transferred
+        - skipped
+        - errors
+      properties:
+        transferred:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Partitions (YYYYMMDD) that were successfully transferred
+          items:
+            type: string
+            pattern: ^\d{8}$
+            minLength: 8
+            maxLength: 8
+        skipped:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Partitions (YYYYMMDD) that were skipped, e.g. missing or already
+            present on the target
+          items:
+            type: string
+            pattern: ^\d{8}$
+            minLength: 8
+            maxLength: 8
+        errors:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Per-day error messages for partitions that failed to transfer
+          items:
+            type: string
+            pattern: ^[\s\S]*$
+            minLength: 1
+            maxLength: 4096
+    ReceiveResponse:
+      type: object
+      description: The outcome of receiving a partition snapshot.
+      required:
+        - partition
+        - bytes_written
+      properties:
+        partition:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: The partition that was received, formatted as YYYYMMDD
+          example: '20240115'
+        bytes_written:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: Number of bytes written to disk while extracting the snapshot
+    AttachResponse:
+      type: object
+      description: The outcome of attaching a partition.
+      required:
+        - partition
+      properties:
+        partition:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: The partition that was attached, formatted as YYYYMMDD
+          example: '20240115'
+    RestoreRequest:
+      type: object
+      description: Parameters for a restore request.
+      required:
+        - source_url
+        - partition_prefix
+      properties:
+        source_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Object Storage source URL to restore from, e.g. gs://bucket/prefix/
+            or s3://bucket/prefix/
+          example: gs://my-bucket/vlbackup/
+        partition_prefix:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: Partition to restore, formatted as YYYYMMDD
+          example: '20240115'
+    RestoreResponse:
+      type: object
+      description: The outcome of restoring a partition snapshot.
+      required:
+        - partition
+        - bytes_written
+      properties:
+        partition:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: The partition that was restored, formatted as YYYYMMDD
+          example: '20240115'
+        bytes_written:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: Number of bytes written to disk while extracting the snapshot
+    ErrorResponse:
+      type: object
+      description: A structured error returned when a request cannot be fulfilled.
+      properties:
+        error:
+          type: string
+          pattern: ^[\s\S]*$
+          minLength: 1
+          maxLength: 4096
+          description: Error message describing the issue
+        code:
+          type: integer
+          format: int32
+          minimum: 100
+          maximum: 599
+          description: HTTP status code associated with the error

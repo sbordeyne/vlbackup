@@ -15,3 +15,6 @@ coverage.out
 __pycache__/
 .venv/
 *.py[cod]
+
+# Node
+node_modules/

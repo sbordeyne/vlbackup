@@ -1,0 +1,12 @@
+---
+# Spectral ruleset for OpenAPI linting, consumed by `lint-openapi` (see the
+# `lint:openapi` mise task). Extends the full IBM Cloud OpenAPI ruleset, which
+# is installed as a dev dependency (package.json) so `extends` resolves via
+# node module resolution on any machine.
+extends:
+  - '@ibm-cloud/openapi-ruleset'
+rules:
+  # VLBackup uses a simple {error, code} error envelope, and reports per-day
+  # transfer outcomes via TransferResponse (returned on 500 too). Neither
+  # matches IBM Cloud's {trace, errors[]} error-container model, so disable it.
+  ibm-error-response-schemas: 'off'

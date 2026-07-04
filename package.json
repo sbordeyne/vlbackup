@@ -1,0 +1,8 @@
+{
+  "name": "vlbackup",
+  "private": true,
+  "description": "Dev-only Node dependencies for OpenAPI linting (see .spectral.yaml).",
+  "devDependencies": {
+    "@ibm-cloud/openapi-ruleset": "1.33.11"
+  }
+}
