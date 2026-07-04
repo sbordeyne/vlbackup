@@ -11,6 +11,7 @@ repos:
         args:
           - --unsafe
       - id: check-added-large-files
+      - id: check-toml
   - repo: https://github.com/lyz-code/yamlfix/
     rev: 1.19.1
     hooks:
