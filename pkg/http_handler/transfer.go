@@ -47,6 +47,11 @@ func parseTransferRange(rng TransferRange) (from, to time.Time, err error) {
 		if err != nil {
 			return from, to, fmt.Errorf("invalid range.to: %w", err)
 		}
+	} else {
+		to = time.Now()
+	}
+	if from.After(to) {
+		return from, to, errors.New("range.from must be before range.to")
 	}
 	return from, to, nil
 }
