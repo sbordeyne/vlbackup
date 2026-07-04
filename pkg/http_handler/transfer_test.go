@@ -179,12 +179,16 @@ func TestBearerAuth(t *testing.T) {
 
 // fakeVL is a fake VictoriaLogs /internal/partition API recording calls.
 type fakeVL struct {
-	mu            sync.Mutex
-	snapshotDir   string
-	emptyDays     map[string]bool // days with no partition
-	created       []string
-	detached      []string
-	deletedSnaps  []string
+	mu             sync.Mutex
+	snapshotDir    string
+	emptyDays      map[string]bool // days with no partition
+	multiDays      map[string]bool // days returning >1 snapshot path
+	failCreateDays map[string]bool // create returns 500
+	failDetachDays map[string]bool // detach returns 500
+	failDelete     bool            // all snapshot deletes return 500
+	created        []string
+	detached       []string
+	deletedSnaps   []string
 }
 
 func (f *fakeVL) server(t *testing.T) *httptest.Server {
@@ -195,8 +199,16 @@ func (f *fakeVL) server(t *testing.T) *httptest.Server {
 		defer f.mu.Unlock()
 		day := r.URL.Query().Get("partition_prefix")
 		f.created = append(f.created, day)
+		if f.failCreateDays[day] {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		if f.emptyDays[day] {
 			fmt.Fprint(w, "[]")
+			return
+		}
+		if f.multiDays[day] {
+			json.NewEncoder(w).Encode([]string{f.snapshotDir, f.snapshotDir})
 			return
 		}
 		json.NewEncoder(w).Encode([]string{f.snapshotDir})
@@ -204,12 +216,20 @@ func (f *fakeVL) server(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/internal/partition/detach", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		f.detached = append(f.detached, r.URL.Query().Get("name"))
+		day := r.URL.Query().Get("name")
+		if f.failDetachDays[day] {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		f.detached = append(f.detached, day)
 	})
 	mux.HandleFunc("/internal/partition/snapshot/delete", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.deletedSnaps = append(f.deletedSnaps, r.URL.Query().Get("path"))
+		if f.failDelete {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -218,11 +238,12 @@ func (f *fakeVL) server(t *testing.T) *httptest.Server {
 
 // fakeTarget is a fake target vlbackup recording receive/attach calls.
 type fakeTarget struct {
-	mu           sync.Mutex
-	conflictDays map[string]bool // days answered with 409
-	failDays     map[string]bool // days answered with 500
-	received     []string
-	attached     []string
+	mu             sync.Mutex
+	conflictDays   map[string]bool // days answered with 409
+	failDays       map[string]bool // receive days answered with 500
+	failAttachDays map[string]bool // attach days answered with 500
+	received       []string
+	attached       []string
 }
 
 func (f *fakeTarget) server(t *testing.T) *httptest.Server {
@@ -247,7 +268,12 @@ func (f *fakeTarget) server(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/api/v1/transfer/attach", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		f.attached = append(f.attached, r.URL.Query().Get("partition"))
+		day := r.URL.Query().Get("partition")
+		if f.failAttachDays[day] {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		f.attached = append(f.attached, day)
 		fmt.Fprint(w, `{}`)
 	})
 	srv := httptest.NewServer(mux)

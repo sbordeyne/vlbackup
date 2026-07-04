@@ -57,6 +57,15 @@ func TestOpenMissingBucket(t *testing.T) {
 	}
 }
 
+func TestOpenFactoryError(t *testing.T) {
+	Register("fake-boom", func(ctx context.Context, u *url.URL) (Repository, error) {
+		return nil, errors.New("factory boom")
+	})
+	if _, _, err := Open(t.Context(), "fake-boom://bucket/prefix"); err == nil {
+		t.Fatal("expected factory error, got nil")
+	}
+}
+
 func TestOpenRegisteredSchemes(t *testing.T) {
 	for _, scheme := range []string{"gs", "s3"} {
 		if _, ok := registry[scheme]; !ok {
