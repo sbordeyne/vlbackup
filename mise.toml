@@ -2,7 +2,7 @@
 go = "1.26.4"
 goreleaser = "latest"
 uv = "latest"
-"pipx:properdocs"= { version = "latest", uvx_args = """
+"pipx:properdocs" = { version = "latest", uvx_args = """
   --with mkdocs-material
   --with mkdocs-mermaid2-plugin
   --with mkdocs-panzoom-plugin
@@ -25,6 +25,7 @@ markdownlint-cli2 = "latest"
 yamllint = "latest"
 "pipx:yamlfix" = "latest"
 pre-commit = "latest"
+tombi = "latest"
 
 [env]
 CGO_ENABLED = "0"

@@ -1,0 +1,55 @@
+---
+on:
+  pull_request:
+    paths:
+      - '**/*.toml'
+      - .github/workflows/lint-toml.yaml
+name: Lint TOML files
+concurrency:
+  group: lint-toml-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  fmt-toml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # v4.2.0
+        with:
+          install: true
+      - name: Lint markdown files on changed files
+        run: |-
+          files=$(git diff --name-only --diff-filter=ACMR "${{ github.event.pull_request.base.sha }}"..."${{ github.sha }}" | grep -E '\.md$' || true)
+          if [ -z "$files" ]; then
+            echo "No TOML files changed"
+          else
+            echo "Changed TOML files:"
+            echo "$files"
+            mise exec -- tombi format --check $files
+          fi
+  lint-toml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # v4.2.0
+        with:
+          install: true
+      - name: Lint markdown files on changed files
+        run: |-
+          files=$(git diff --name-only --diff-filter=ACMR "${{ github.event.pull_request.base.sha }}"..."${{ github.sha }}" | grep -E '\.md$' || true)
+          if [ -z "$files" ]; then
+            echo "No TOML files changed"
+          else
+            echo "Changed TOML files:"
+            echo "$files"
+            mise exec -- tombi lint $files
+          fi
