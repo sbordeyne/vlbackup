@@ -87,7 +87,7 @@ func TestS3Integration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 	if prefix != "backups" {
 		t.Errorf("prefix = %q, want %q", prefix, "backups")
 	}
@@ -126,7 +126,7 @@ func TestS3Integration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Download: %v", err)
 		}
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 		destDir := t.TempDir()
 		if _, err := transfer.ExtractDir(r, destDir); err != nil {
 			t.Fatalf("ExtractDir: %v", err)

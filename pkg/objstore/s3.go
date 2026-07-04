@@ -73,7 +73,7 @@ func (s *s3Repository) Download(ctx context.Context, key string) (io.ReadCloser,
 	}
 	// GetObject is lazy; Stat surfaces NoSuchKey before we hand out the reader.
 	if _, err := obj.Stat(); err != nil {
-		obj.Close()
+		_ = obj.Close()
 		return nil, s.mapNotFound(err, key)
 	}
 	return obj, nil

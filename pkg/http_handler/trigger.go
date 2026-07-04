@@ -91,7 +91,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 			handleError(w, err, body.PartitionPrefix, metrics, status)
 			return
 		}
-		defer repo.Close()
+		defer func() { _ = repo.Close() }()
 		log.Infof("opened storage repository for destination %s", body.DestinationURL)
 		vmClient, err := victoriametrics.NewClient(r.Context(), args.VictoriaLogsURL.String())
 		log.Info("initialized vmClient")
@@ -107,7 +107,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 		}
 		if len(snapshotPaths) == 0 {
 			w.WriteHeader(http.StatusNoContent)
-			w.Write([]byte("Snapshot created but no paths returned, nothing to copy"))
+			_, _ = w.Write([]byte("Snapshot created but no paths returned, nothing to copy"))
 			metrics.SnapshotCount.WithLabelValues(body.PartitionPrefix, "true").Inc()
 			return
 		}
@@ -132,7 +132,7 @@ func TriggerHandlerFactory(args cli.Args, metrics *metrics.Metrics) func(w http.
 		}
 
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 		metrics.SnapshotCount.WithLabelValues(body.PartitionPrefix, "true").Inc()
 	}
 }

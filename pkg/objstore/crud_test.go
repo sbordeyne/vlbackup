@@ -44,7 +44,7 @@ func testCRUDRoundTrip(t *testing.T, repo objstore.Repository) {
 		t.Fatalf("Download: %v", err)
 	}
 	got, err := io.ReadAll(r)
-	r.Close()
+	_ = r.Close()
 	if err != nil {
 		t.Fatalf("reading download: %v", err)
 	}

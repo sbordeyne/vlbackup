@@ -71,7 +71,7 @@ func ingestLogs(t *testing.T, baseURL string, day time.Time, count int) {
 	if err != nil {
 		t.Fatalf("failed to ingest logs: %v", err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("failed to ingest logs: %s", response.Status)
 	}

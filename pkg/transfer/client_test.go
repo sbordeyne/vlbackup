@@ -129,7 +129,7 @@ func TestSendPartition(t *testing.T) {
 			n, _ := io.Copy(io.Discard, r.Body)
 			gotBody = int(n)
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"bytes_written": 42}`))
+			_, _ = w.Write([]byte(`{"bytes_written": 42}`))
 		}))
 		t.Cleanup(srv.Close)
 
@@ -160,7 +160,7 @@ func TestSendPartition(t *testing.T) {
 
 	t.Run("conflict", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			io.Copy(io.Discard, r.Body)
+			_, _ = io.Copy(io.Discard, r.Body)
 			w.WriteHeader(http.StatusConflict)
 		}))
 		t.Cleanup(srv.Close)
@@ -174,7 +174,7 @@ func TestSendPartition(t *testing.T) {
 
 	t.Run("server error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			io.Copy(io.Discard, r.Body)
+			_, _ = io.Copy(io.Discard, r.Body)
 			http.Error(w, "kaboom", http.StatusInternalServerError)
 		}))
 		t.Cleanup(srv.Close)
@@ -191,9 +191,9 @@ func TestSendPartition(t *testing.T) {
 
 	t.Run("bad json", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			io.Copy(io.Discard, r.Body)
+			_, _ = io.Copy(io.Discard, r.Body)
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("not json"))
+			_, _ = w.Write([]byte("not json"))
 		}))
 		t.Cleanup(srv.Close)
 

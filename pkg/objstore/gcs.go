@@ -40,7 +40,7 @@ func newGCSRepository(ctx context.Context, u *url.URL) (Repository, error) {
 func (g *gcsRepository) Upload(ctx context.Context, key string, r io.Reader) error {
 	w := g.bucket.Object(key).NewWriter(ctx)
 	if _, err := io.Copy(w, r); err != nil {
-		w.Close()
+		_ = w.Close()
 		return err
 	}
 	// GCS commits the object on Close; a Close error means the upload failed.

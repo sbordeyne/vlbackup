@@ -89,7 +89,7 @@ func ingestLogs(t *testing.T, baseURL string, day time.Time, count int) {
 	if err != nil {
 		t.Fatalf("failed to ingest logs: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("failed to ingest logs: %s", resp.Status)
 	}
@@ -264,7 +264,7 @@ func TestTransferIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer queryResp.Body.Close()
+	defer func() { _ = queryResp.Body.Close() }()
 	queryBody, _ := io.ReadAll(queryResp.Body)
 	lines := 0
 	for line := range bytes.SplitSeq(queryBody, []byte("\n")) {

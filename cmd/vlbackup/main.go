@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -44,5 +45,7 @@ func main() {
 	})
 
 	fmt.Printf("Started server on address %s", args.Host)
-	http.ListenAndServe(args.Host, r)
+	if err := http.ListenAndServe(args.Host, r); err != nil {
+		log.Fatal(err)
+	}
 }
