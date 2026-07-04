@@ -6,17 +6,18 @@ A go program to handle VictoriaLogs backups to object storage (Google Cloud Stor
 
 ```txt
 vlbackup v1.0.0
-Usage: main [--host HOST] [--victorialogsurl VICTORIALOGSURL] [--victorialogsauthkey VICTORIALOGSAUTHKEY] [--datapath DATAPATH] [--transferauthkey TRANSFERAUTHKEY]
+Usage: vlbackup [--host HOST] [--victoria-logs-url VICTORIA-LOGS-URL] [--victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY] [--data-path DATA-PATH] [--transfer-auth-key TRANSFER-AUTH-KEY]
 
 Options:
-  --host HOST            The host to bind the HTTP server to [default: :8080, env: HOST]
-  --victorialogsurl VICTORIALOGSURL
-                         The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VICTORIALOGSURL]
-  --victorialogsauthkey VICTORIALOGSAUTHKEY
-                         Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set [env: VICTORIALOGSAUTHKEY]
-  --datapath DATAPATH    Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath [default: /data, env: DATAPATH]
-  --transferauthkey TRANSFERAUTHKEY
-                         Optional shared bearer token for inter-vlbackup transfer endpoints [env: TRANSFERAUTHKEY]
+  --host HOST            The host to bind the HTTP server to [default: :8080, env: VLBACKUP_HOST]
+  --victoria-logs-url VICTORIA-LOGS-URL
+                         The VictoriaLogs URL [default: http://127.0.0.1:9428, env: VLBACKUP_VICTORIA_LOGS_URL]
+  --victoria-logs-auth-key VICTORIA-LOGS-AUTH-KEY
+                         Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set [env: VLBACKUP_VICTORIA_LOGS_AUTH_KEY]
+  --data-path DATA-PATH
+                         Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath [default: /data, env: VLBACKUP_DATA_PATH]
+  --transfer-auth-key TRANSFER-AUTH-KEY
+                         Optional shared bearer token for inter-vlbackup transfer endpoints [env: VLBACKUP_TRANSFER_AUTH_KEY]
   --help, -h             display this help and exit
   --version              display version and exit
 ```
@@ -89,11 +90,11 @@ Response:
 
 Status is `200` when there are no errors, `500` otherwise (with the partial summary included).
 
-The target-side endpoints `/api/v1/transfer/receive` and `/api/v1/transfer/attach` are called by the source vlbackup, not by operators. They are protected by a shared bearer token when `TRANSFERAUTHKEY` is set (set the same value on both sidecars). If the source dies between detach and attach, the data is present but unattached on the target: recover with `curl -XPOST -H "Authorization: Bearer $TOKEN" http://vlbackup-target:8080/api/v1/transfer/attach?partition=YYYYMMDD`.
+The target-side endpoints `/api/v1/transfer/receive` and `/api/v1/transfer/attach` are called by the source vlbackup, not by operators. They are protected by a shared bearer token when `VLBACKUP_TRANSFER_AUTH_KEY` is set (set the same value on both sidecars). If the source dies between detach and attach, the data is present but unattached on the target: recover with `curl -XPOST -H "Authorization: Bearer $TOKEN" http://vlbackup-target:8080/api/v1/transfer/attach?partition=YYYYMMDD`.
 
 **Deployment requirements for transfers:**
 
-- Both vlbackup sidecars must mount their VictoriaLogs data volume **at the same path as VictoriaLogs itself** (`-storageDataPath`, default `/data`, configured via `DATAPATH`). The source reads snapshot files at the paths VictoriaLogs reports; the target writes partitions into `<DATAPATH>/partitions/`.
+- Both vlbackup sidecars must mount their VictoriaLogs data volume **at the same path as VictoriaLogs itself** (`-storageDataPath`, default `/data`, configured via `VLBACKUP_DATA_PATH`). The source reads snapshot files at the paths VictoriaLogs reports; the target writes partitions into `<data-path>/partitions/`.
 - VictoriaLogs must be recent enough to expose the `/internal/partition/*` endpoints (snapshot create/delete, attach, detach).
 
 ## Deployment
@@ -111,8 +112,8 @@ server:
     - name: snapshot
       image: ghcr.io/sbordeyne/vlbackup:v1.0.2
       args:
-        - --victorialogsurl=http://localhost:9428
-        - --victorialogsauthkey=$(VICTORIA_LOGS_AUTH_KEY)
+        - --victoria-logs-url=http://localhost:9428
+        - --victoria-logs-auth-key=$(VICTORIA_LOGS_AUTH_KEY)
       ports:
         - containerPort: 8080
           name: http-snapshot

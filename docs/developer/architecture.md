@@ -4,15 +4,15 @@ VLBackup is a single Go binary (`cmd/vlbackup`) that serves a small HTTP API and
 
 ## Package layout
 
-| Package | Responsibility |
-| --- | --- |
-| `cmd/vlbackup` | `main`: parses args, builds the Prometheus registry, wires the go-chi router. |
-| `pkg/cli` | Flag/env parsing (`Args`). |
-| `pkg/http_handler` | HTTP handlers: `/snapshot`, `/api/v1/transfer*`, health, bearer auth. |
-| `pkg/objstore` | Swappable object-storage layer: `Repository` interface, scheme registry, `gs://` and `s3://` backends. |
-| `pkg/transfer` | Peer client, `tar.gz` streaming (`StreamDir`/`ExtractDir`), day-range logic. |
-| `pkg/victoriametrics` | Client for VictoriaLogs `/internal/partition/*` endpoints. |
-| `pkg/metrics` | Prometheus metric definitions. |
+| Package               | Responsibility                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------ |
+| `cmd/vlbackup`        | `main`: parses args, builds the Prometheus registry, wires the go-chi router.                          |
+| `pkg/cli`             | Flag/env parsing (`Args`).                                                                             |
+| `pkg/http_handler`    | HTTP handlers: `/snapshot`, `/api/v1/transfer*`, health, bearer auth.                                  |
+| `pkg/objstore`        | Swappable object-storage layer: `Repository` interface, scheme registry, `gs://` and `s3://` backends. |
+| `pkg/transfer`        | Peer client, `tar.gz` streaming (`StreamDir`/`ExtractDir`), day-range logic.                           |
+| `pkg/victoriametrics` | Client for VictoriaLogs `/internal/partition/*` endpoints.                                             |
+| `pkg/metrics`         | Prometheus metric definitions.                                                                         |
 
 ## Request wiring
 

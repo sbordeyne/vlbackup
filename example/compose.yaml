@@ -58,10 +58,10 @@ services:
       - alloy
     container_name: vlbackup
     build: ..
-    command: vlbackup --victorialogsurl=http://victorialogs:9428
+    command: vlbackup --victoria-logs-url=http://victorialogs:9428
     environment:
-      DATAPATH: /data
-      TRANSFERAUTHKEY: demo-token
+      VLBACKUP_DATA_PATH: /data
+      VLBACKUP_TRANSFER_AUTH_KEY: demo-token
       STORAGE_EMULATOR_HOST: fake-gcs:4443
     volumes:
       - ./victorialogs-data:/data
@@ -70,10 +70,10 @@ services:
       - victorialogs-target
     container_name: vlbackup-target
     build: ..
-    command: vlbackup --victorialogsurl=http://victorialogs-target:9428
+    command: vlbackup --victoria-logs-url=http://victorialogs-target:9428
     environment:
-      DATAPATH: /data
-      TRANSFERAUTHKEY: demo-token
+      VLBACKUP_DATA_PATH: /data
+      VLBACKUP_TRANSFER_AUTH_KEY: demo-token
     volumes:
       - ./victorialogs-target-data:/data
   trigger:

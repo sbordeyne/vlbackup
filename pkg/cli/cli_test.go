@@ -30,9 +30,9 @@ func TestGetCliArgs(t *testing.T) {
 	t.Cleanup(func() { os.Args = oldArgs })
 	os.Args = []string{"vlbackup"}
 
-	t.Setenv("HOST", ":9999")
-	t.Setenv("DATAPATH", "/custom/data")
-	t.Setenv("TRANSFERAUTHKEY", "sekret")
+	t.Setenv("VLBACKUP_HOST", ":9999")
+	t.Setenv("VLBACKUP_DATA_PATH", "/custom/data")
+	t.Setenv("VLBACKUP_TRANSFER_AUTH_KEY", "sekret")
 
 	args := cli.GetCliArgs()
 	if args.Host != ":9999" {

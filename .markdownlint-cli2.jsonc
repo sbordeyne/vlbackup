@@ -8,7 +8,8 @@
     "MD060": false,
     "MD013": false,
     "no-hard-tabs": false,
-    "MD024": false
+    "MD024": false,
+    "MD046": false
   },
   "fix": true,
   "gitignore": true

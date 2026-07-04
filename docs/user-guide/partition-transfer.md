@@ -21,7 +21,7 @@ sequenceDiagram
     loop each sealed day in range
         Src->>SrcVL: create snapshot
         Src->>Tgt: POST /transfer/receive (tar.gz stream)
-        Tgt->>Tgt: extract into <DATAPATH>/partitions/
+        Tgt->>Tgt: extract into <data-path>/partitions/
         Tgt-->>Src: 200 OK (or 409 Conflict)
         Src->>SrcVL: delete snapshot
         Src->>SrcVL: detach partition
@@ -55,10 +55,10 @@ curl -XPOST -H "Authorization: Bearer $TOKEN" \
 ## Deployment requirements
 
 !!! warning "Both sidecars must share the VictoriaLogs data path"
-    Each vlbackup sidecar must mount its VictoriaLogs data volume **at the same path as VictoriaLogs itself** (`-storageDataPath`, default `/data`, configured via `DATAPATH`). The source reads snapshot files at the paths VictoriaLogs reports; the target writes partitions into `<DATAPATH>/partitions/`.
+    Each vlbackup sidecar must mount its VictoriaLogs data volume **at the same path as VictoriaLogs itself** (`-storageDataPath`, default `/data`, configured via `VLBACKUP_DATA_PATH`). The source reads snapshot files at the paths VictoriaLogs reports; the target writes partitions into `<data-path>/partitions/`.
 
 - VictoriaLogs must expose the `/internal/partition/*` endpoints (snapshot create/delete, attach, detach).
-- Set the same `TRANSFERAUTHKEY` on both sidecars so the target endpoints are authenticated.
+- Set the same `VLBACKUP_TRANSFER_AUTH_KEY` on both sidecars so the target endpoints are authenticated.
 - Trigger transfers from a Kubernetes `CronJob` (or any scheduler) hitting `POST /api/v1/transfer` on the source.
 
 See the [HTTP API](../reference/http-api.md#post-apiv1transfer) for the request/response contract.

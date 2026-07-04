@@ -4,13 +4,13 @@ VLBackup exposes Prometheus metrics on `GET /metrics`, alongside the standard Go
 
 ## Application metrics
 
-| Name | Type | Labels | Description |
-| --- | --- | --- | --- |
-| `vlbackup_snapshot_duration_seconds` | Histogram | `snapshot`, `stage` | Duration of snapshot stages. Uses default Prometheus buckets. |
-| `vlbackup_snapshot_count` | Counter | `snapshot`, `success` | Snapshots performed, labelled by success (`true`/`false`). |
-| `vlbackup_transfer_duration_seconds` | Histogram | `partition`, `stage` | Duration of partition-transfer stages. Exponential buckets (~0.1s to ~13min), since streams can take minutes. |
-| `vlbackup_transfer_count` | Counter | `partition`, `result` | Partition transfers by result (`transferred`, `skipped`, `error`). |
-| `vlbackup_transfer_bytes_total` | Counter | `direction` | Bytes transferred between vlbackup instances, by `direction` (`sent`, `received`). |
+| Name                                 | Type      | Labels                | Description                                                                                                   |
+| ------------------------------------ | --------- | --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `vlbackup_snapshot_duration_seconds` | Histogram | `snapshot`, `stage`   | Duration of snapshot stages. Uses default Prometheus buckets.                                                 |
+| `vlbackup_snapshot_count`            | Counter   | `snapshot`, `success` | Snapshots performed, labelled by success (`true`/`false`).                                                    |
+| `vlbackup_transfer_duration_seconds` | Histogram | `partition`, `stage`  | Duration of partition-transfer stages. Exponential buckets (~0.1s to ~13min), since streams can take minutes. |
+| `vlbackup_transfer_count`            | Counter   | `partition`, `result` | Partition transfers by result (`transferred`, `skipped`, `error`).                                            |
+| `vlbackup_transfer_bytes_total`      | Counter   | `direction`           | Bytes transferred between vlbackup instances, by `direction` (`sent`, `received`).                            |
 
 ## Label values
 

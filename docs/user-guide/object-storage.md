@@ -13,10 +13,10 @@ Each snapshot is streamed as one `tar.gz` object named `<prefix>/<partition>.tar
 
 Uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (ADC).
 
-| Environment variable | Description |
-| --- | --- |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account key file. Omit it when using Workload Identity / metadata-server credentials. |
-| `STORAGE_EMULATOR_HOST` | Optional `host:port` of a GCS emulator such as [fake-gcs-server](https://github.com/fsouza/fake-gcs-server). Honored natively by the SDK; used by the `example/compose.yaml` stack. |
+| Environment variable             | Description                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account key file. Omit it when using Workload Identity / metadata-server credentials.                                                                             |
+| `STORAGE_EMULATOR_HOST`          | Optional `host:port` of a GCS emulator such as [fake-gcs-server](https://github.com/fsouza/fake-gcs-server). Honored natively by the SDK; used by the `example/compose.yaml` stack. |
 
 ```sh
 curl -sL -XPOST http://localhost:8080/snapshot \
@@ -28,14 +28,14 @@ curl -sL -XPOST http://localhost:8080/snapshot \
 
 Works with AWS S3, MinIO, Ceph RADOS Gateway, Cloudflare R2, Scaleway, and other S3-compatible endpoints.
 
-| Environment variable | Default | Description |
-| --- | --- | --- |
-| `AWS_ACCESS_KEY_ID` | — | Access key. |
-| `AWS_SECRET_ACCESS_KEY` | — | Secret key. |
-| `AWS_SESSION_TOKEN` | — | Optional session token for temporary credentials. |
-| `AWS_REGION` | *(auto)* | Region; auto-detected when unset. |
-| `S3_ENDPOINT` | `s3.amazonaws.com` | Endpoint `host[:port]`. Point this at MinIO/Ceph/R2 for non-AWS stores. |
-| `S3_USE_SSL` | `true` | Whether to use TLS. Set `false` for a plaintext local MinIO. |
+| Environment variable    | Default            | Description                                                             |
+| ----------------------- | ------------------ | ----------------------------------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | —                  | Access key.                                                             |
+| `AWS_SECRET_ACCESS_KEY` | —                  | Secret key.                                                             |
+| `AWS_SESSION_TOKEN`     | —                  | Optional session token for temporary credentials.                       |
+| `AWS_REGION`            | *(auto)*           | Region; auto-detected when unset.                                       |
+| `S3_ENDPOINT`           | `s3.amazonaws.com` | Endpoint `host[:port]`. Point this at MinIO/Ceph/R2 for non-AWS stores. |
+| `S3_USE_SSL`            | `true`             | Whether to use TLS. Set `false` for a plaintext local MinIO.            |
 
 ```sh
 curl -sL -XPOST http://localhost:8080/snapshot \

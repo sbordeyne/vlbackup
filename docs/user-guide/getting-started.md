@@ -14,7 +14,7 @@ Images are published to GitHub Container Registry for `linux/amd64` and `linux/a
 docker run --rm \
   -p 8080:8080 \
   -v /path/to/victorialogs/data:/data \
-  -e VICTORIALOGSURL=http://victorialogs:9428 \
+  -e VLBACKUP_VICTORIA_LOGS_URL=http://victorialogs:9428 \
   ghcr.io/sbordeyne/vlbackup:latest
 ```
 
@@ -26,7 +26,7 @@ The server binds to `:8080` by default and prints `Started server on address :80
 git clone https://github.com/sbordeyne/vlbackup.git
 cd vlbackup
 go build -o vlbackup ./cmd/vlbackup
-./vlbackup --victorialogsurl=http://127.0.0.1:9428
+./vlbackup --victoria-logs-url=http://127.0.0.1:9428
 ```
 
 ## Try the local stack

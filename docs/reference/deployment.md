@@ -27,8 +27,8 @@ server:
     - name: snapshot
       image: ghcr.io/sbordeyne/vlbackup:v1.0.2
       args:
-        - --victorialogsurl=http://localhost:9428
-        - --victorialogsauthkey=$(VICTORIA_LOGS_AUTH_KEY)
+        - --victoria-logs-url=http://localhost:9428
+        - --victoria-logs-auth-key=$(VICTORIA_LOGS_AUTH_KEY)
       ports:
         - containerPort: 8080
           name: http-snapshot
@@ -68,7 +68,7 @@ server:
 ```
 
 !!! warning "Match the data path"
-    The sidecar's `DATAPATH` (default `/data`) must point at the **same volume, at the same mount path** VictoriaLogs uses for `-storageDataPath`. Adjust `volumeMounts` and `--datapath` accordingly.
+    The sidecar's `VLBACKUP_DATA_PATH` (default `/data`) must point at the **same volume, at the same mount path** VictoriaLogs uses for `-storageDataPath`. Adjust `volumeMounts` and `--data-path` accordingly.
 
 ## Credentials
 
