@@ -8,7 +8,7 @@ on:
     branches:
       - master
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 jobs:
   title:
@@ -107,6 +107,10 @@ jobs:
           config: ./.testcoverage.yaml
           breakdown-file-name: ${{ github.ref_name == 'master' && 'master.breakdown' || 'feature.breakdown' }}
           diff-base-breakdown-file-name: ${{ steps.download-master-breakdown.outputs.found_artifact == 'true' && 'master.breakdown' || '' }}
+          # Generate and push the coverage badge to the `badges` branch, but only
+          # on master pushes (PRs from forks lack write access anyway).
+          git-token: ${{ github.ref_name == 'master' && github.event_name == 'push' && secrets.GITHUB_TOKEN || '' }}
+          git-branch: badges
       - name: upload artifact (master.breakdown)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: github.ref_name == 'master' && github.event_name == 'push'

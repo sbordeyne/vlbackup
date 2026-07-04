@@ -1,5 +1,12 @@
 # VLBackup
 
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue?logo=materialformkdocs&logoColor=white)](https://sbordeyne.github.io/vlbackup)
+[![CI](https://img.shields.io/github/actions/workflow/status/sbordeyne/vlbackup/pr.yaml?branch=master&label=CI)](https://github.com/sbordeyne/vlbackup/actions/workflows/pr.yaml)
+[![Coverage](https://raw.githubusercontent.com/sbordeyne/vlbackup/badges/.badges/master/coverage.svg)](https://github.com/sbordeyne/vlbackup/actions/workflows/pr.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sbordeyne/vlbackup)](https://goreportcard.com/report/github.com/sbordeyne/vlbackup)
+[![Release](https://img.shields.io/github/v/release/sbordeyne/vlbackup)](https://github.com/sbordeyne/vlbackup/releases/latest)
+[![Go version](https://img.shields.io/github/go-mod/go-version/sbordeyne/vlbackup)](go.mod)
+
 A go program to handle VictoriaLogs backups to object storage (Google Cloud Storage or any S3-compatible store), and partition transfers between VictoriaLogs instances.
 
 ## CLI arguments
