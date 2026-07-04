@@ -534,6 +534,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#restoring-a-partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restoring a partition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Restoring a partition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conflicts-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conflicts and errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-another-backend" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -923,6 +962,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#restoring-a-partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restoring a partition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Restoring a partition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conflicts-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conflicts and errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-another-backend" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1034,6 +1112,41 @@
 <p class="admonition-title">MinIO / self-hosted endpoints</p>
 <p>The client uses automatic bucket lookup: virtual-host style for <code>*.amazonaws.com</code>, path style for everything else — which is what MinIO and most self-hosted gateways expect. No extra configuration is needed.</p>
 </div>
+<h2 id="restoring-a-partition">Restoring a partition<a class="headerlink" href="#restoring-a-partition" title="Permanent link">&para;</a></h2>
+<p><code>POST /v1/vlbackup/restore</code> is the inverse of snapshot: it pulls one partition back out of object storage and attaches it to VictoriaLogs. The <code>source_url</code> uses the <strong>same scheme/bucket/prefix model</strong> as <code>destination_url</code> above, so a partition uploaded to <code>gs://my-bucket/vlbackup/</code> is restored from the same URL.</p>
+<p>The object key is resolved as <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> — exactly the name snapshot wrote — from the <code>partition_prefix</code> (<code>YYYYMMDD</code>) in the request:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
+</code></pre></div>
+<h3 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    autonumber
+    participant Op as Operator
+    participant VLB as vlbackup
+    participant OS as Object Storage
+    participant VL as VictoriaLogs
+
+    Op-&gt;&gt;VLB: POST /v1/vlbackup/restore
+    VLB-&gt;&gt;VLB: reject if partition already present (409)
+    VLB-&gt;&gt;OS: download &lt;prefix&gt;/&lt;partition&gt;.tar.gz
+    OS--&gt;&gt;VLB: tar.gz stream (or 404 if missing)
+    VLB-&gt;&gt;VLB: extract into temp dir, then rename into partitions/
+    VLB-&gt;&gt;VL: attach partition
+    VLB--&gt;&gt;Op: 202 {partition, bytes_written}</code></pre>
+<p>The download is streamed into a <strong>hidden temp dir on the same filesystem, then atomically renamed</strong> into <code>&lt;data-path&gt;/partitions/&lt;partition&gt;/</code> — VictoriaLogs never sees a half-written partition. A failed extraction leaves nothing behind.</p>
+<h3 id="conflicts-and-errors">Conflicts and errors<a class="headerlink" href="#conflicts-and-errors" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Partition already attached locally</strong> → <code>409 Conflict</code>. Restore refuses to overwrite a live partition; it checks before spending the download. Detach/remove it first if you really mean to replace it.</li>
+<li><strong>Snapshot missing in object storage</strong> → <code>404 Not Found</code> (the key <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> does not exist).</li>
+<li><strong>Unsupported <code>source_url</code> scheme or malformed body</strong> → <code>400 Bad Request</code>.</li>
+<li><strong>Download, extraction, or attach failure</strong> → <code>500 Internal Server Error</code>.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Data path must match VictoriaLogs</p>
+<p>As with transfer, the sidecar writes partitions into <code>&lt;data-path&gt;/partitions/</code>, so <code>VLBACKUP_DATA_PATH</code> must equal VictoriaLogs' <code>-storageDataPath</code>. VictoriaLogs must also expose <code>/internal/partition/attach</code>.</p>
+</div>
+<p>See the <a href="../../reference/http-api/#post-v1vlbackuprestore">HTTP API</a> for the full request/response contract.</p>
 <h2 id="adding-another-backend">Adding another backend<a class="headerlink" href="#adding-another-backend" title="Permanent link">&para;</a></h2>
 <p>Support for a new store (Azure Blob, Backblaze B2, …) is a single new file in <code>pkg/objstore</code>. See <a href="../../developer/architecture/#extending-storage-backends">Architecture → Extending storage backends</a> in the Developer guide.</p>
 
@@ -1058,7 +1171,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 16:43:37 UTC">July 4, 2026</span>
   </span>
 
     
