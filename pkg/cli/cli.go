@@ -12,11 +12,11 @@ import (
 var Version = "0.0.0-dev"
 
 type Args struct {
-	Host                string  `arg:"env" help:"The host to bind the HTTP server to" default:":8080"`
-	VictoriaLogsURL     url.URL `arg:"env" help:"The VictoriaLogs URL" default:"http://127.0.0.1:9428"`
-	VictoriaLogsAuthKey string  `arg:"env" help:"Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set" default:""`
-	DataPath            string  `arg:"env" help:"Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath" default:"/data"`
-	TransferAuthKey     string  `arg:"env" help:"Optional shared bearer token for inter-vlbackup transfer endpoints" default:""`
+	Host                string  `arg:"env" help:"The host to bind the HTTP server to" default:":8080" env:"VLBACKUP_HOST"`
+	VictoriaLogsURL     url.URL `arg:"env" help:"The VictoriaLogs URL" default:"http://127.0.0.1:9428" env:"VLBACKUP_VICTORIA_LOGS_URL"`
+	VictoriaLogsAuthKey string  `arg:"env" help:"Optional auth key for victorialogs, use if VL -partitionManageAuthKey flag is set" default:"" env:"VLBACKUP_VICTORIA_LOGS_AUTH_KEY"`
+	DataPath            string  `arg:"env" help:"Mount path of the VictoriaLogs data volume in this sidecar, must match VL -storageDataPath" default:"/data" env:"VLBACKUP_DATA_PATH"`
+	TransferAuthKey     string  `arg:"env" help:"Optional shared bearer token for inter-vlbackup transfer endpoints" default:"" env:"VLBACKUP_TRANSFER_AUTH_KEY"`
 }
 
 func (Args) Version() string {
