@@ -46,7 +46,7 @@ jobs:
             exit 1
           fi
   test:
-    name: Test, Format & Lint
+    name: Test & Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

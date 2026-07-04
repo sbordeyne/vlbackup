@@ -10,3 +10,8 @@ example/fake-logs-data/
 # Test coverage
 coverage.out
 *.breakdown
+
+# Python
+__pycache__/
+.venv/
+*.py[cod]
