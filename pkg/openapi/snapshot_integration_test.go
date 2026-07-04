@@ -110,9 +110,9 @@ func TestTriggerIntegration(t *testing.T) {
 	}
 	handler := openapi.NewHandler(openapi.NewServer(args, metrics.New(prometheus.NewRegistry())), "")
 
-	body, _ := json.Marshal(openapi.TriggerRequest{
-		PartitionPrefix: &partition,
-		DestinationUrl:  "s3://backups/logs/",
+	body, _ := json.Marshal(openapi.SnapshotRequest{
+		Range:          openapi.TimeRange{From: "now-1d/d"},
+		DestinationUrl: "s3://backups/logs/",
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/snapshot", bytes.NewReader(body))
 	rec := httptest.NewRecorder()

@@ -36,16 +36,16 @@ The API is served on `--host` (default `:8080`). Health, readiness and metrics a
 
 ### `POST /v1/vlbackup/snapshot`
 
-Triggers a snapshot for the given partition prefix and uploads it to the given destination
+Snapshots each sealed day in `range` and uploads it to the given destination
 
 ```sh
 curl -sL -XPOST http://vlbackup:8080/v1/vlbackup/snapshot -H "Content-Type: application/json" -d '{
   "destination_url": "gs://my-bucket/path/to/folder",
-  "partition_prefix": "20060102"
+  "range": { "from": "now-1d/d" }
 }'
 ```
 
-The storage backend is selected from the `destination_url` scheme (see [Object storage backends](#object-storage-backends)). Each snapshot is streamed as one tar.gz object named `<pathprefix>/<partition>.tar.gz` (e.g. `path/to/folder/20060102.tar.gz`); re-running a snapshot for the same partition overwrites the object.
+`range` uses the same `[from, to)` UTC-day time-expression grammar as transfer; today's active partition is never snapshotted. The storage backend is selected from the `destination_url` scheme (see [Object storage backends](#object-storage-backends)). Each snapshotted day is streamed as one tar.gz object named `<pathprefix>/<partition>.tar.gz` (e.g. `path/to/folder/20060102.tar.gz`); re-running a snapshot for the same partition overwrites the object.
 
 ## Object storage backends
 

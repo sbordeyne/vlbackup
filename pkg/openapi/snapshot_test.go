@@ -62,7 +62,7 @@ func triggerRequest(t *testing.T, vlURL, destURL string) *httptest.ResponseRecor
 	t.Helper()
 	h := buildHandler(testArgs(t, vlURL), newTestMetrics())
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/snapshot",
-		strings.NewReader(`{"partition_prefix":"20240101","destination_url":"`+destURL+`"}`))
+		strings.NewReader(`{"range":{"from":"now-1d/d"},"destination_url":"`+destURL+`"}`))
 	return do(h, req)
 }
 
@@ -105,14 +105,11 @@ func TestTriggerHandlerUnsupportedScheme(t *testing.T) {
 	m := newTestMetrics()
 	h := buildHandler(testArgs(t, ""), m)
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/snapshot",
-		strings.NewReader(`{"partition_prefix":"20240101","destination_url":"ftp://host/path"}`))
+		strings.NewReader(`{"range":{"from":"now-1d/d"},"destination_url":"ftp://host/path"}`))
 	rec := do(h, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", rec.Code)
-	}
-	if got := testutil.ToFloat64(m.SnapshotCount.WithLabelValues("20240101", "false")); got != 1 {
-		t.Errorf("SnapshotCount{20240101,false} = %v, want 1", got)
 	}
 }
 

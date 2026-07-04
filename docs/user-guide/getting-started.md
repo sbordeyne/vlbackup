@@ -52,11 +52,11 @@ curl -sL -XPOST http://localhost:8080/v1/vlbackup/snapshot \
   -H "Content-Type: application/json" \
   -d '{
     "destination_url": "gs://my-bucket/vlbackup/",
-    "partition_prefix": "20260703"
+    "range": { "from": "now-1d/d" }
   }'
 ```
 
-- `partition_prefix` is optional; it defaults to **yesterday** (UTC, `YYYYMMDD`).
+- `range` is required; each sealed UTC day in `[from, to)` is snapshotted. `{"from": "now-1d/d"}` covers just yesterday; `to` defaults to now. Today's active partition is never snapshotted.
 - `destination_url` is required and selects the storage backend by scheme.
 
 Each snapshot is uploaded as `<prefix>/<partition>.tar.gz` (e.g. `vlbackup/20260703.tar.gz`). See the [HTTP API](../reference/http-api.md) for the full response contract and the other endpoints.

@@ -136,7 +136,7 @@ func transferBody(t *testing.T, targetURL, from string) []byte {
 	t.Helper()
 	body, _ := json.Marshal(openapi.TransferRequest{
 		TargetUrl: targetURL,
-		Range:     openapi.TransferRange{From: from},
+		Range:     openapi.TimeRange{From: from},
 	})
 	return body
 }
@@ -164,7 +164,7 @@ func TestParseTransferRange(t *testing.T) {
 
 	t.Run("relative from and to resolved against now", func(t *testing.T) {
 		toExpr := "now/d"
-		from, gotTo, err := openapi.ParseTransferRange(openapi.TransferRange{From: "now-7d/d", To: &toExpr}, now)
+		from, gotTo, err := openapi.ParseTimeRange(openapi.TimeRange{From: "now-7d/d", To: &toExpr}, now)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -177,7 +177,7 @@ func TestParseTransferRange(t *testing.T) {
 	})
 
 	t.Run("missing to defaults to now", func(t *testing.T) {
-		_, gotTo, err := openapi.ParseTransferRange(openapi.TransferRange{From: "now-1d"}, now)
+		_, gotTo, err := openapi.ParseTimeRange(openapi.TimeRange{From: "now-1d"}, now)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -187,19 +187,19 @@ func TestParseTransferRange(t *testing.T) {
 	})
 
 	t.Run("bad order errors", func(t *testing.T) {
-		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: "2026-07-03T00:00:00Z", To: &to}, now); err == nil {
+		if _, _, err := openapi.ParseTimeRange(openapi.TimeRange{From: "2026-07-03T00:00:00Z", To: &to}, now); err == nil {
 			t.Error("err = nil, want from-after-to error")
 		}
 	})
 
 	t.Run("missing from errors", func(t *testing.T) {
-		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{}, now); err == nil {
+		if _, _, err := openapi.ParseTimeRange(openapi.TimeRange{}, now); err == nil {
 			t.Error("err = nil, want range.from required")
 		}
 	})
 
 	t.Run("invalid from expression errors", func(t *testing.T) {
-		if _, _, err := openapi.ParseTransferRange(openapi.TransferRange{From: "yesterday"}, now); err == nil {
+		if _, _, err := openapi.ParseTimeRange(openapi.TimeRange{From: "yesterday"}, now); err == nil {
 			t.Error("err = nil, want invalid expression error")
 		}
 	})

@@ -207,7 +207,7 @@ func TestTransferIntegration(t *testing.T) {
 
 	body, _ := json.Marshal(openapi.TransferRequest{
 		TargetUrl: targetSrv.URL,
-		Range: openapi.TransferRange{
+		Range: openapi.TimeRange{
 			From: time.Now().UTC().AddDate(0, 0, -2).Format(time.RFC3339),
 		},
 	})
@@ -290,7 +290,7 @@ func TestTransferIntegration(t *testing.T) {
 		to := conflictDay.AddDate(0, 0, 1).Format(time.RFC3339)
 		body, _ := json.Marshal(openapi.TransferRequest{
 			TargetUrl: targetSrv.URL,
-			Range: openapi.TransferRange{
+			Range: openapi.TimeRange{
 				From: conflictDay.Format(time.RFC3339),
 				To:   &to,
 			},

@@ -29,28 +29,36 @@ The `Bearer` endpoints require `Authorization: Bearer <token>` when `VLBACKUP_TR
 
 ## `POST /v1/vlbackup/snapshot`
 
-Snapshots the given partition and uploads it to `destination_url`.
+Snapshots each sealed day in `range` and uploads it to `destination_url`.
 
 ### Request body
 
 ```json
 {
   "destination_url": "gs://my-bucket/vlbackup/",
-  "partition_prefix": "20260703"
+  "range": {
+    "from": "now-7d/d",
+    "to": "now/d"
+  }
 }
 ```
 
-| Field              | Required | Description                                                                                                 |
-| ------------------ | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `destination_url`  | yes      | Backend + bucket + prefix, e.g. `gs://bucket/prefix/` or `s3://bucket/prefix/`. Scheme selects the backend. |
-| `partition_prefix` | no       | Partition to snapshot (`YYYYMMDD`). Defaults to **yesterday** UTC.                                          |
+| Field             | Required | Description                                                                                                 |
+| ----------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `destination_url` | yes      | Backend + bucket + prefix, e.g. `gs://bucket/prefix/` or `s3://bucket/prefix/`. Scheme selects the backend. |
+| `range.from`      | yes      | Start of the range (time expression).                                                                       |
+| `range.to`        | no       | End of the range. Defaults to now.                                                                          |
+
+`range` uses the same **time expression** grammar and `[from, to)` UTC-day
+semantics as [transfer](#post-v1vlbackuptransfer) — today's active partition is
+never snapshotted. To snapshot only yesterday, use `{"from": "now-1d/d"}`.
 
 ### Example
 
 ```sh
 curl -sL -XPOST http://vlbackup:8080/v1/vlbackup/snapshot \
   -H "Content-Type: application/json" \
-  -d '{"destination_url": "s3://my-bucket/backups/", "partition_prefix": "20260703"}'
+  -d '{"destination_url": "s3://my-bucket/backups/", "range": {"from": "now-1d/d"}}'
 ```
 
 ### Responses

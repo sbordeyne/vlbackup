@@ -20,11 +20,11 @@ paths:
     post:
       tags:
         - snapshot
-      summary: Snapshot a partition to Object Storage
+      summary: Snapshot a range of partitions to Object Storage
       description: >-
-        Creates a VictoriaLogs snapshot of the requested partition, streams it as
-        a
-        tar.gz to the destination Object Storage bucket, and deletes the local snapshot.
+        For each sealed day in the requested range, creates a VictoriaLogs snapshot
+        of the local partition, streams it as a tar.gz to the destination Object
+        Storage bucket, and deletes the local snapshot.
       operationId: trigger_snapshot
       requestBody:
         description: Snapshot request parameters
@@ -32,12 +32,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TriggerRequest'
+              $ref: '#/components/schemas/SnapshotRequest'
       responses:
         '202':
           description: >-
-            Snapshot request accepted. The snapshot was created and uploaded, or the
-            partition held no data to copy (an empty acknowledgement in that case).
+            Snapshot request accepted. Each sealed day in the range was snapshotted
+            and uploaded; days holding no data are skipped (an empty range is an
+            empty acknowledgement).
         '400':
           description: Bad request, e.g. malformed body or unsupported destination
             URL scheme
@@ -265,20 +266,17 @@ components:
         maxLength: 8
         example: '20240115'
   schemas:
-    TriggerRequest:
+    SnapshotRequest:
       type: object
       description: Parameters for a snapshot request.
       required:
         - destination_url
+        - range
       properties:
-        partition_prefix:
-          type: string
-          pattern: ^\d{8}$
-          minLength: 8
-          maxLength: 8
-          description: Partition to snapshot, formatted as YYYYMMDD. Defaults to yesterday
-            (UTC).
-          example: '20240115'
+        range:
+          description: Inclusive time range whose days will be snapshotted
+          allOf:
+            - $ref: '#/components/schemas/TimeRange'
         destination_url:
           type: string
           format: url
@@ -305,8 +303,8 @@ components:
         range:
           description: Inclusive time range whose days will be transferred
           allOf:
-            - $ref: '#/components/schemas/TransferRange'
-    TransferRange:
+            - $ref: '#/components/schemas/TimeRange'
+    TimeRange:
       type: object
       description: >-
         An inclusive range of time. Each bound is a time expression of the form
@@ -438,12 +436,18 @@ components:
         - bytes_written
       properties:
         partition:
-          type: string
-          pattern: ^\d{8}$
-          minLength: 8
-          maxLength: 8
-          description: The partition that was restored, formatted as YYYYMMDD
-          example: '20240115'
+          type: array
+          items:
+            type: string
+            pattern: ^\d{8}$
+            minLength: 8
+            maxLength: 8
+            description: The partition that was restored, formatted as YYYYMMDD
+            example: '20240115'
+          description: Array of partitions restored
+          example:
+            - '20240115'
+            - '20240116'
         bytes_written:
           type: integer
           format: int64

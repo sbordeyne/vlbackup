@@ -12,10 +12,10 @@ import (
 	"github.com/sbordeyne/vlbackup/pkg/victoriametrics"
 )
 
-// ParseTransferRange resolves the inclusive [from, to] window. Both bounds are
+// ParseTimeRange resolves the inclusive [from, to] window. Both bounds are
 // relative-or-absolute time expressions (see timeexpr.Parse) evaluated against
 // now; a missing `to` defaults to now. It validates presence and ordering.
-func ParseTransferRange(rng TransferRange, now time.Time) (from, to time.Time, err error) {
+func ParseTimeRange(rng TimeRange, now time.Time) (from, to time.Time, err error) {
 	if strings.TrimSpace(rng.From) == "" {
 		return from, to, errors.New("range.from is required")
 	}
@@ -45,7 +45,7 @@ func (s *Server) TransferPartitions(ctx context.Context, request TransferPartiti
 	}
 
 	now := time.Now()
-	from, to, err := ParseTransferRange(request.Body.Range, now)
+	from, to, err := ParseTimeRange(request.Body.Range, now)
 	if err != nil {
 		return TransferPartitions400JSONResponse(errorResponse(err, 400)), nil
 	}
