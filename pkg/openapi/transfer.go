@@ -40,10 +40,6 @@ func ParseTimeRange(rng TimeRange, now time.Time) (from, to time.Time, err error
 // target vlbackup, detaches it locally, cleans up the snapshot, and asks the
 // target to attach it. Any hard error aborts the remaining days.
 func (s *Server) TransferPartitions(ctx context.Context, request TransferPartitionsRequestObject) (TransferPartitionsResponseObject, error) {
-	observeStage := func(partition, stage string, start time.Time) {
-		s.metrics.TransferDuration.WithLabelValues(partition, stage).Observe(time.Since(start).Seconds())
-	}
-
 	now := time.Now()
 	from, to, err := ParseTimeRange(request.Body.Range, now)
 	if err != nil {
@@ -60,6 +56,22 @@ func (s *Server) TransferPartitions(ctx context.Context, request TransferPartiti
 	vmClient, err := victoriametrics.NewClient(ctx, s.args.VictoriaLogsURL.String())
 	if err != nil {
 		return TransferPartitions500JSONResponse{Transferred: []string{}, Skipped: []string{}, Errors: []string{err.Error()}}, nil
+	}
+
+	resp := s.transferSealedDays(ctx, peer, vmClient, days)
+	if len(resp.Errors) > 0 {
+		return TransferPartitions500JSONResponse(resp), nil
+	}
+	return TransferPartitions200JSONResponse(resp), nil
+}
+
+// transferSealedDays moves each sealed day's partition to the target vlbackup:
+// snapshot the local partition, stream it to the target, delete the snapshot,
+// detach it locally, and ask the target to attach it. Any hard error aborts the
+// remaining days. It is shared by the transfer and migrate handlers.
+func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClient, vmClient victoriametrics.Client, days []string) TransferResponse {
+	observeStage := func(partition, stage string, start time.Time) {
+		s.metrics.TransferDuration.WithLabelValues(partition, stage).Observe(time.Since(start).Seconds())
 	}
 
 	resp := TransferResponse{Transferred: []string{}, Skipped: []string{}, Errors: []string{}}
@@ -131,13 +143,10 @@ func (s *Server) TransferPartitions(ctx context.Context, request TransferPartiti
 		}
 		observeStage(day, "attach", stageStart)
 
-		log.Infof("Transferred partition %s to %s (%d bytes)", day, request.Body.TargetUrl, sent)
+		log.Infof("Transferred partition %s (%d bytes)", day, sent)
 		resp.Transferred = append(resp.Transferred, day)
 		s.metrics.TransferCount.WithLabelValues(day, "transferred").Inc()
 	}
 
-	if len(resp.Errors) > 0 {
-		return TransferPartitions500JSONResponse(resp), nil
-	}
-	return TransferPartitions200JSONResponse(resp), nil
+	return resp
 }

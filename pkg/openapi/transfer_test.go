@@ -26,6 +26,8 @@ type fakeVL struct {
 	failCreateDays map[string]bool // create returns 500
 	failDetachDays map[string]bool // detach returns 500
 	failDelete     bool            // all snapshot deletes return 500
+	recentLines    int             // rows served by /select/logsql/query (migrate)
+	queryFail      bool            // /select/logsql/query returns 500 (migrate)
 	created        []string
 	detached       []string
 	deletedSnaps   []string
@@ -69,6 +71,21 @@ func (f *fakeVL) server(t *testing.T) *httptest.Server {
 		f.deletedSnaps = append(f.deletedSnaps, r.URL.Query().Get("path"))
 		if f.failDelete {
 			w.WriteHeader(http.StatusInternalServerError)
+		}
+	})
+	// LogsQL query endpoint, used by the migrate handler to export today's
+	// data and to count rows for verification.
+	mux.HandleFunc("/select/logsql/query", func(w http.ResponseWriter, r *http.Request) {
+		if f.queryFail {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if strings.Contains(r.FormValue("query"), "stats count()") {
+			_, _ = fmt.Fprintf(w, "{\"rows\":\"%d\"}\n", f.recentLines)
+			return
+		}
+		for i := 0; i < f.recentLines; i++ {
+			_, _ = fmt.Fprintf(w, `{"_time":"2024-01-01T00:00:00Z","_msg":"line %d"}`+"\n", i)
 		}
 	})
 	srv := httptest.NewServer(mux)

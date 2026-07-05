@@ -2,6 +2,7 @@ package victoriametrics_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -189,6 +190,88 @@ func TestListPartitionsUnit(t *testing.T) {
 	})
 	t.Run("conn error", func(t *testing.T) {
 		if _, err := vmDeadClient(t).ListPartitions(""); err == nil {
+			t.Error("err = nil, want connection error")
+		}
+	})
+}
+
+func TestQueryStreamUnit(t *testing.T) {
+	t.Run("success returns streaming body", func(t *testing.T) {
+		c := vmServer(t, http.StatusOK, "{\"_msg\":\"a\"}\n{\"_msg\":\"b\"}\n")
+		body, err := c.QueryStream("_time:>=2024-01-01T00:00:00Z", "key")
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		defer func() { _ = body.Close() }()
+		got, _ := io.ReadAll(body)
+		if !strings.Contains(string(got), `"_msg":"a"`) {
+			t.Errorf("body = %q, want the streamed lines", got)
+		}
+	})
+	t.Run("non-200", func(t *testing.T) {
+		c := vmServer(t, http.StatusInternalServerError, "boom")
+		if _, err := c.QueryStream("q", ""); err == nil || !strings.Contains(err.Error(), "failed to query logs") {
+			t.Errorf("err = %v, want query failure", err)
+		}
+	})
+	t.Run("conn error", func(t *testing.T) {
+		if _, err := vmDeadClient(t).QueryStream("q", ""); err == nil {
+			t.Error("err = nil, want connection error")
+		}
+	})
+}
+
+func TestIngestUnit(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		if err := vmServer(t, http.StatusOK, "").Ingest(strings.NewReader("{}\n"), "key"); err != nil {
+			t.Errorf("err = %v", err)
+		}
+	})
+	t.Run("no content ok", func(t *testing.T) {
+		if err := vmServer(t, http.StatusNoContent, "").Ingest(strings.NewReader("{}\n"), ""); err != nil {
+			t.Errorf("err = %v", err)
+		}
+	})
+	t.Run("non-200", func(t *testing.T) {
+		if err := vmServer(t, http.StatusInternalServerError, "x").Ingest(strings.NewReader("{}\n"), ""); err == nil {
+			t.Error("err = nil, want failure")
+		}
+	})
+	t.Run("conn error", func(t *testing.T) {
+		if err := vmDeadClient(t).Ingest(strings.NewReader("{}\n"), ""); err == nil {
+			t.Error("err = nil, want connection error")
+		}
+	})
+}
+
+func TestCountUnit(t *testing.T) {
+	t.Run("success parses rows", func(t *testing.T) {
+		n, err := vmServer(t, http.StatusOK, "{\"rows\":\"42\"}\n").Count("q", "key")
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if n != 42 {
+			t.Errorf("count = %d, want 42", n)
+		}
+	})
+	t.Run("empty result is zero", func(t *testing.T) {
+		n, err := vmServer(t, http.StatusOK, "").Count("q", "")
+		if err != nil || n != 0 {
+			t.Errorf("count = %d, err = %v, want 0, nil", n, err)
+		}
+	})
+	t.Run("non-200", func(t *testing.T) {
+		if _, err := vmServer(t, http.StatusInternalServerError, "x").Count("q", ""); err == nil {
+			t.Error("err = nil, want failure")
+		}
+	})
+	t.Run("bad rows value", func(t *testing.T) {
+		if _, err := vmServer(t, http.StatusOK, `{"rows":"NaN"}`).Count("q", ""); err == nil {
+			t.Error("err = nil, want parse error")
+		}
+	})
+	t.Run("conn error", func(t *testing.T) {
+		if _, err := vmDeadClient(t).Count("q", ""); err == nil {
 			t.Error("err = nil, want connection error")
 		}
 	})

@@ -13,6 +13,7 @@ For an interactive, always-in-sync view of the API, see the
 | ------ | ----------------------------- | ------ | ----------------------------------------------------- |
 | `POST` | `/v1/vlbackup/snapshot`       | —      | Snapshot a partition and upload it to object storage. |
 | `POST` | `/v1/vlbackup/transfer`       | —      | Transfer sealed partitions to a peer vlbackup.        |
+| `POST` | `/v1/vlbackup/migrate`        | —      | Transfer sealed partitions **and** copy today's data. |
 | `POST` | `/v1/vlbackup/transfer/receive` | Bearer | Target side: receive a partition stream.            |
 | `POST` | `/v1/vlbackup/transfer/attach`  | Bearer | Target side: attach a received partition.           |
 | `POST` | `/v1/vlbackup/restore`        | —      | Restore a partition from object storage.              |
@@ -122,6 +123,56 @@ curl -sL -XPOST http://vlbackup-source:8080/v1/vlbackup/transfer \
 - `errors` — per-day failures.
 
 Status is `200` when there are no hard errors, `500` otherwise. Both carry the same `TransferResponse` summary; `400` (malformed body / invalid range or target URL) returns an `ErrorResponse` instead.
+
+## `POST /v1/vlbackup/migrate`
+
+A superset of `/transfer`: it moves sealed partitions the same way **and** copies today's still-open data at the record level (LogsQL query → JSON stream ingest). See [Partition Migrate](../user-guide/partition-migrate.md) for the full mechanism.
+
+### Request body
+
+```json
+{
+  "target_vlbackup_url": "http://vlbackup-target:8080",
+  "target_vlinsert_url": "http://vlogs-target:9428",
+  "target_vlselect_url": "http://vlogs-target:9428",
+  "range": {
+    "from": "now-7d/d"
+  }
+}
+```
+
+| Field                 | Required | Description                                                         |
+| --------------------- | -------- | ------------------------------------------------------------------- |
+| `target_vlbackup_url` | yes      | Base URL of the target vlbackup sidecar (moves sealed partitions).  |
+| `target_vlinsert_url` | yes      | Target VictoriaLogs insert API (receives today's JSONLine data).    |
+| `target_vlselect_url` | yes      | Target VictoriaLogs select API (verifies ingested row counts).      |
+| `target_vl_auth_key`  | no       | Optional VictoriaLogs `authKey` for the target insert/select calls. |
+| `range.from`          | yes      | Start of the sealed-day range (time expression, same as transfer).  |
+| `range.to`            | no       | End of the range. Defaults to now.                                  |
+
+Sealed days follow the same UTC `[from, to)` rules as [transfer](#post-v1vlbackuptransfer). Today's data is queried with `_time:>=<today>` from the **local** VictoriaLogs and copied — the source keeps it.
+
+!!! warning "Recent-data ingestion is at-least-once"
+    VictoriaLogs does not deduplicate on ingest, so **re-running migrate re-inserts today's rows** on the target. Sealed days are unaffected.
+
+### Response
+
+```json
+{
+  "transferred": ["20260701"],
+  "skipped": [],
+  "errors": [],
+  "recent": {
+    "partition": "20260705",
+    "bytes_ingested": 4194304,
+    "source_count": 1024,
+    "target_count": 1024,
+    "verified": true
+  }
+}
+```
+
+The sealed-day fields match `TransferResponse`. `recent.verified` is `true` when the target's today row count is at least the source's — an **advisory** check that does not by itself fail the request (freshly ingested rows may lag in query visibility, and copying is at-least-once). Genuine query/ingest/count failures are reported in `errors` with a `500` status.
 
 ## `POST /v1/vlbackup/transfer/receive` and `/attach`
 
