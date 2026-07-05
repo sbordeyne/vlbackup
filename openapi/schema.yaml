@@ -98,6 +98,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransferResponse'
+  /v1/vlbackup/migrate:
+    post:
+      tags:
+        - transfer
+      summary: Migrate partitions and recent data to another vlbackup instance
+      description: >-
+        Like transfer, but also migrates the most recent (still-open) data. For
+        each sealed day in the requested range it moves the partition to the
+        target vlbackup (snapshot, stream, detach, attach). It then copies
+        today's data by querying the local VictoriaLogs over LogsQL as streamed
+        JSONLine and ingesting it into the target's JSON stream API. Today's data
+        is copied (the source is left intact) and ingestion is at-least-once: a
+        re-run re-inserts today's rows, since VictoriaLogs does not deduplicate
+        on ingest.
+      operationId: migrate_partitions
+      requestBody:
+        description: Migrate request parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrateRequest'
+      responses:
+        '200':
+          description: Migration completed with no hard errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrateResponse'
+              example:
+                transferred:
+                  - '20240113'
+                  - '20240114'
+                skipped:
+                  - '20240112'
+                errors: []
+                recent:
+                  partition: '20240115'
+                  bytes_ingested: 4194304
+                  source_count: 1024
+                  target_count: 1024
+                  verified: true
+        '400':
+          description: Bad request, e.g. malformed body, invalid range or invalid
+            target URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: One or more days or the recent-data phase failed; the response
+            lists per-day and recent errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrateResponse'
   /v1/vlbackup/transfer/receive:
     post:
       tags:
@@ -373,6 +429,131 @@ components:
             pattern: ^[\s\S]*$
             minLength: 1
             maxLength: 4096
+    MigrateRequest:
+      type: object
+      description: Parameters for a migrate request.
+      required:
+        - target_vlbackup_url
+        - target_vlinsert_url
+        - target_vlselect_url
+        - range
+      properties:
+        target_vlbackup_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Base URL of the target vlbackup instance, used to move sealed
+            partitions (receive/attach)
+          example: http://target-vlbackup:8080
+        target_vlinsert_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Base URL of the target VictoriaLogs insert API, used to ingest
+            today's data via the JSON stream API
+          example: http://target-vlinsert:9428
+        target_vlselect_url:
+          type: string
+          format: url
+          minLength: 1
+          maxLength: 2048
+          description: Base URL of the target VictoriaLogs select API, used to verify
+            ingested row counts after migration
+          example: http://target-vlselect:9428
+        target_vl_auth_key:
+          type: string
+          pattern: ^[\s\S]*$
+          minLength: 0
+          maxLength: 2048
+          description: Optional auth key for the target VictoriaLogs insert/select
+            APIs, passed as the VictoriaLogs authKey
+        range:
+          description: Inclusive time range whose sealed days will be migrated
+          allOf:
+            - $ref: '#/components/schemas/TimeRange'
+    MigrateResponse:
+      type: object
+      description: The outcome of a migrate request.
+      required:
+        - transferred
+        - skipped
+        - errors
+      properties:
+        transferred:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Sealed partitions (YYYYMMDD) that were successfully moved
+          items:
+            type: string
+            pattern: ^\d{8}$
+            minLength: 8
+            maxLength: 8
+        skipped:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Sealed partitions (YYYYMMDD) that were skipped, e.g. missing
+            or already present on the target
+          items:
+            type: string
+            pattern: ^\d{8}$
+            minLength: 8
+            maxLength: 8
+        errors:
+          type: array
+          minItems: 0
+          maxItems: 100000
+          description: Per-day and recent-phase error messages
+          items:
+            type: string
+            pattern: ^[\s\S]*$
+            minLength: 1
+            maxLength: 4096
+        recent:
+          description: The outcome of copying today's (still-open) data
+          allOf:
+            - $ref: '#/components/schemas/RecentMigration'
+    RecentMigration:
+      type: object
+      description: The outcome of copying today's data as streamed JSONLine.
+      required:
+        - partition
+        - bytes_ingested
+        - source_count
+        - target_count
+        - verified
+      properties:
+        partition:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: Today's partition (YYYYMMDD) whose data was copied
+          example: '20240115'
+        bytes_ingested:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: Number of JSONLine bytes streamed to the target insert API
+        source_count:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: Row count for today on the source, from the verification query
+        target_count:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: Row count for today on the target, from the verification query
+        verified:
+          type: boolean
+          description: True when the target row count is at least the source row count
     ReceiveResponse:
       type: object
       description: The outcome of receiving a partition snapshot.
