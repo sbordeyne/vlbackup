@@ -6,3 +6,4 @@ nav:
   - configuration.md
   - object-storage.md
   - partition-transfer.md
+  - deployment
