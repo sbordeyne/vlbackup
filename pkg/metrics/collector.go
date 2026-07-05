@@ -8,8 +8,11 @@ import (
 )
 
 type Metrics struct {
-	SnapshotCount *prometheus.CounterVec
+	SnapshotCount    *prometheus.CounterVec
 	SnapshotDuration *prometheus.HistogramVec
+	TransferCount    *prometheus.CounterVec
+	TransferDuration *prometheus.HistogramVec
+	TransferBytes    *prometheus.CounterVec
 }
 
 func New(reg prometheus.Registerer) *Metrics {
@@ -29,10 +32,32 @@ func New(reg prometheus.Registerer) *Metrics {
 			},
 			[]string{"snapshot", "success"},
 		),
+		TransferCount: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "vlbackup_transfer_count",
+				Help: "Number of partition transfers, by result (transferred, skipped, error)",
+			},
+			[]string{"partition", "result"},
+		),
+		TransferDuration: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "vlbackup_transfer_duration_seconds",
+				Help:    "Duration of partition transfer stages in seconds.",
+				Buckets: prometheus.ExponentialBuckets(0.1, 2, 14), // ~0.1s to ~13min, streams can take minutes
+			},
+			[]string{"partition", "stage"},
+		),
+		TransferBytes: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "vlbackup_transfer_bytes_total",
+				Help: "Total bytes transferred between vlbackup instances, by direction (sent, received)",
+			},
+			[]string{"direction"},
+		),
 	}
 
 	// Register metrics
-	reg.MustRegister(m.SnapshotDuration, m.SnapshotCount)
+	reg.MustRegister(m.SnapshotDuration, m.SnapshotCount, m.TransferCount, m.TransferDuration, m.TransferBytes)
 	return m
 }
 

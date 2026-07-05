@@ -2,3 +2,19 @@ dist
 # Added by goreleaser init:
 dist/
 site/
+
+example/victorialogs-data/
+example/fake-gcs-data/
+example/fake-logs-data/
+
+# Test coverage
+coverage.out
+*.breakdown
+
+# Python
+__pycache__/
+.venv/
+*.py[cod]
+
+# Node
+node_modules/

@@ -1,0 +1,53 @@
+---
+name: Run openapi-lint
+on:
+  pull_request:
+    paths:
+      - openapi/*.yaml
+      - openapi/*.yml
+      - openapi/*.json
+      - .github/workflows/lint-openapi.yaml
+concurrency:
+  group: lint-openapi-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  openapi-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # v4.2.0
+        with:
+          install: true
+      - name: Install node deps
+        # .spectral.yaml extends @ibm-cloud/openapi-ruleset from node_modules.
+        run: mise exec -- npm ci
+      - name: Lint changed OpenAPI specs with annotations
+        # lint-openapi has no native GitHub format, so we turn its JSON output
+        # into workflow-command annotations (inline on the PR diff + Checks tab).
+        # NOTE: GitHub caps annotations at 10 per level per step (50 per job);
+        # a spec with >10 warnings shows only the first 10 inline.
+        run: |-
+          set -uo pipefail
+          specs=$(git diff --name-only --diff-filter=ACMR "${{ github.event.pull_request.base.sha }}"..."${{ github.sha }}" | grep -E '^openapi/[^/]+\.(ya?ml|json)$' || true)
+          if [ -z "$specs" ]; then
+            echo "No OpenAPI files changed"
+            exit 0
+          fi
+          echo "Changed OpenAPI files:"
+          echo "$specs"
+          rc=0
+          for spec in $specs; do
+            # lint-openapi exits non-zero on errors; capture JSON either way.
+            json=$(mise exec -- lint-openapi --json "$spec") || rc=1
+            printf '%s\n' "$json" | jq -r --arg f "$spec" '
+              (.error.results[]?   | "::error file=\($f),line=\(.line),title=\(.rule)::\(.message|gsub("\n";"%0A"))"),
+              (.warning.results[]? | "::warning file=\($f),line=\(.line),title=\(.rule)::\(.message|gsub("\n";"%0A"))"),
+              ((.info.results[]?, .hint.results[]?) | "::notice file=\($f),line=\(.line),title=\(.rule)::\(.message|gsub("\n";"%0A"))")
+            '
+          done
+          exit $rc

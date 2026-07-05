@@ -1,0 +1,99 @@
+---
+services:
+  fake-gcs:
+    container_name: fake-gcs
+    image: fsouza/fake-gcs-server:latest
+    command:
+      - -scheme=http
+      - -port=4443
+      - -public-host=localhost:4443
+    ports:
+      - 4443:4443
+    volumes:
+      - ./fake-gcs-data:/data
+  fake-logs:
+    container_name: fake-logs
+    image: mingrammer/flog
+    command:
+      - --format=json
+      - --loop
+      - --sleep=1s
+    ports:
+      - 9429:9429
+    volumes:
+      - ./fake-logs-data:/data
+    platform: linux/amd64
+  victorialogs:
+    container_name: victorialogs
+    image: victoriametrics/victoria-logs:latest
+    command:
+      - -storageDataPath=/data
+    ports:
+      - 9428:9428
+    volumes:
+      - ./victorialogs-data:/data
+  alloy:
+    depends_on:
+      - victorialogs
+      - fake-logs
+    container_name: alloy
+    image: grafana/alloy:latest
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  victorialogs-target:
+    container_name: victorialogs-target
+    image: victoriametrics/victoria-logs:latest
+    command:
+      - -storageDataPath=/data
+    ports:
+      - 9430:9428
+    volumes:
+      - ./victorialogs-target-data:/data
+  vlbackup:
+    depends_on:
+      - fake-gcs
+      - victorialogs
+      - fake-logs
+      - alloy
+    container_name: vlbackup
+    build: ..
+    command: vlbackup --victoria-logs-url=http://victorialogs:9428
+    environment:
+      VLBACKUP_DATA_PATH: /data
+      VLBACKUP_TRANSFER_AUTH_KEY: demo-token
+      STORAGE_EMULATOR_HOST: fake-gcs:4443
+    volumes:
+      - ./victorialogs-data:/data
+  vlbackup-target:
+    depends_on:
+      - victorialogs-target
+    container_name: vlbackup-target
+    build: ..
+    command: vlbackup --victoria-logs-url=http://victorialogs-target:9428
+    environment:
+      VLBACKUP_DATA_PATH: /data
+      VLBACKUP_TRANSFER_AUTH_KEY: demo-token
+    volumes:
+      - ./victorialogs-target-data:/data
+  trigger:
+    depends_on:
+      - vlbackup
+    container_name: trigger
+    image: curlimages/curl:latest
+    command:
+      - watch -n10 "curl -sL http://vlbackup:8080/snapshot -d'{\"\"}'"
+  trigger-transfer:
+    depends_on:
+      - vlbackup
+      - vlbackup-target
+    container_name: trigger-transfer
+    image: curlimages/curl:latest
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |-
+        sleep 30
+        from=$$(date -u -d "@$$(( $$(date +%s) - 86400 ))" +%Y-%m-%dT00:00:00Z)
+        curl -sL http://vlbackup:8080/api/v1/transfer -H "Content-Type: application/json" \
+          -d "{\"target_url\": \"http://vlbackup-target:8080\", \"range\": {\"from\": \"$$from\"}}"

@@ -1,16 +1,4 @@
-FROM golang:1.26.4 AS builder
-
+FROM gcr.io/distroless/static:nonroot
 ARG TARGETPLATFORM
-ARG TARGETOS
-ARG TARGETARCH
-
-WORKDIR /app/
-ADD . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o vlbackup main.go
-
-FROM scratch
-WORKDIR /app/
-COPY --from=builder /app/vlbackup /app/vlbackup
-EXPOSE 8080
-
-ENTRYPOINT ["/app/vlbackup"]
+ENTRYPOINT ["/usr/bin/vlbackup"]
+COPY $TARGETPLATFORM/vlbackup /usr/bin/

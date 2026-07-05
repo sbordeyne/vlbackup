@@ -1,0 +1,35 @@
+---
+name: Run yamllint
+on:
+  pull_request:
+    paths:
+      - '**/*.yaml'
+      - '*.yaml'
+      - '**/*.yml'
+      - '*.yml'
+concurrency:
+  group: lint-yaml-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # v4.2.0
+        with:
+          install: true
+      - name: Run yamllint on changed files
+        run: |-
+          files=$(git diff --name-only --diff-filter=ACMR "${{ github.event.pull_request.base.sha }}"..."${{ github.sha }}" | grep -E '\.(yaml|yml)$' || true)
+          if [ -z "$files" ]; then
+            echo "No YAML files changed"
+          else
+            echo "Changed YAML files:"
+            echo "$files"
+            mise exec -- yamllint --config-file=.yamllint.yaml --format=github $files
+          fi

@@ -1,0 +1,81 @@
+[tools]
+go = "1.26.4"
+node = "22"
+goreleaser = "latest"
+uv = "latest"
+"pipx:properdocs" = { version = "latest", uvx_args = """
+  --with mkdocs-material
+  --with mkdocs-mermaid2-plugin
+  --with mkdocs-panzoom-plugin
+  --with mkdocs-d2-plugin
+  --with mkdocs-macros-plugin
+  --with markdown-exec
+  --with mkdocs-protobuf
+  --with mkdocs-git-revision-date-localized-plugin
+  --with mkdocs-git-authors-plugin
+  --with mkdocs-pygments
+  --with mkdocs-redirects
+  --with mkdocs-autolinks-plugin
+  --with mkdocs-techdocs-core
+  --with mkdocs-monorepo-plugin
+  --with mkdocs-awesome-nav
+  --with mkdocs-swagger-ui-tag
+  --with neoteroi-mkdocs
+  --with mike>=2.2.0
+  --with-executables-from mike
+  """ }
+markdownlint-cli2 = "latest"
+yamllint = "latest"
+"pipx:yamlfix" = "latest"
+pre-commit = "latest"
+tombi = "latest"
+golangci-lint = "v2.12.2"
+"go:github.com/vladopajic/go-test-coverage/v2" = "v2.18.8"
+"aqua:grafana/alloy" = "latest"
+"npm:ibm-openapi-validator" = "latest"
+"pipx:commitizen" = "latest"
+oapi-codegen = "latest"
+
+[env]
+CGO_ENABLED = "0"
+PROJECT_NAME = "{{ config_root | basename }}"
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.docs]
+run = "properdocs serve"
+
+[tasks."docs:build"]
+run = "properdocs build --strict"
+
+# Versioned docs are deployed by CI via mike. This serves the versioned
+# gh-pages site locally for previewing the version selector.
+[tasks."docs:versions"]
+run = "mike serve"
+
+[tasks.coverage]
+run = "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out"
+
+[tasks."lint:md"]
+run = "markdownlint-cli2 --config .markdownlint.yaml '**/*.md'"
+
+[tasks."lint:yaml"]
+run = "yamllint --config-file=.yamllint.yaml ."
+
+[tasks."lint:openapi"]
+description = "Lint OpenAPI specifications"
+run = '''
+  set -eu
+  # The .spectral.yaml ruleset extends @ibm-cloud/openapi-ruleset, installed
+  # as a dev dependency, so make sure node_modules is present first.
+  [ -d node_modules ] || npm ci
+  for spec in openapi/*.yaml; do
+    lint-openapi "${spec}"
+  done
+'''
+
+[tasks."gen:openapi"]
+description = "Generate source files from OpenAPI specifications"
+run = 'oapi-codegen --config .oapi-codegen.yaml openapi/schema.yaml'
+
+[tasks."fix:yaml"]
+run = "yamlfix -c .yamlfix.toml ."
