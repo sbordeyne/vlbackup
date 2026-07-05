@@ -12,11 +12,13 @@
         <meta name="author" content="Simon Bordeyne">
       
       
-        <link rel="canonical" href="https://sbordeyne.github.io/vlbackup/dev/reference/deployment/">
+        <link rel="canonical" href="https://sbordeyne.github.io/vlbackup/dev/user-guide/partition-migrate/">
       
       
-        <link rel="prev" href="../metrics/">
+        <link rel="prev" href="../partition-transfer/">
       
+      
+        <link rel="next" href="../deployment/helm-chart/">
       
       
         
@@ -27,7 +29,7 @@
     
     
       
-        <title>Deployment - VLBackup</title>
+        <title>Partition Migrate - VLBackup</title>
       
     
     
@@ -78,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deployment" class="md-skip">
+        <a href="#partition-migrate" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Deployment
+              Partition Migrate
             
           </span>
         </div>
@@ -227,11 +229,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../user-guide/getting-started/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../getting-started/" class="md-tabs__link">
           
   
   
@@ -267,13 +271,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../http-api/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../reference/http-api/" class="md-tabs__link">
           
   
   
@@ -334,26 +336,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
             
   
   
@@ -371,7 +378,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -389,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/getting-started/" class="md-nav__link">
+      <a href="../getting-started/" class="md-nav__link">
         
   
   
@@ -417,7 +424,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -445,7 +452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/object-storage/" class="md-nav__link">
+      <a href="../object-storage/" class="md-nav__link">
         
   
   
@@ -473,7 +480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/partition-transfer/" class="md-nav__link">
+      <a href="../partition-transfer/" class="md-nav__link">
         
   
   
@@ -498,10 +505,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../user-guide/partition-migrate/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Partition Migrate
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -517,6 +551,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#range-and-recent-data-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Range and recent-data semantics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -535,17 +644,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
         
           
-          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="">
             
   
   
@@ -581,7 +693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/deployment/helm-chart/" class="md-nav__link">
+      <a href="../deployment/helm-chart/" class="md-nav__link">
         
   
   
@@ -609,7 +721,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/deployment/operator-vlsingle/" class="md-nav__link">
+      <a href="../deployment/operator-vlsingle/" class="md-nav__link">
         
   
   
@@ -637,7 +749,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/deployment/operator-vlcluster/" class="md-nav__link">
+      <a href="../deployment/operator-vlcluster/" class="md-nav__link">
         
   
   
@@ -665,7 +777,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/deployment/cronjob/" class="md-nav__link">
+      <a href="../deployment/cronjob/" class="md-nav__link">
         
   
   
@@ -820,31 +932,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -862,7 +969,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -880,7 +987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../http-api/" class="md-nav__link">
+      <a href="../../reference/http-api/" class="md-nav__link">
         
   
   
@@ -908,7 +1015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api-explorer/" class="md-nav__link">
+      <a href="../../reference/api-explorer/" class="md-nav__link">
         
   
   
@@ -936,7 +1043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../metrics/" class="md-nav__link">
+      <a href="../../reference/metrics/" class="md-nav__link">
         
   
   
@@ -961,37 +1068,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Deployment
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../reference/deployment/" class="md-nav__link">
         
   
   
@@ -1007,70 +1087,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#container-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Container image
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#helm-sidecar-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Helm sidecar example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#credentials" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Credentials
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#triggering-backups-and-transfers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Triggering backups and transfers
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1110,10 +1126,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#container-image" class="md-nav__link">
+  <a href="#flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Container image
+        Flow
       
     </span>
   </a>
@@ -1121,10 +1137,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#helm-sidecar-example" class="md-nav__link">
+  <a href="#request" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Helm sidecar example
+        Request
       
     </span>
   </a>
@@ -1132,10 +1148,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#credentials" class="md-nav__link">
+  <a href="#range-and-recent-data-semantics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Credentials
+        Range and recent-data semantics
       
     </span>
   </a>
@@ -1143,10 +1159,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#triggering-backups-and-transfers" class="md-nav__link">
+  <a href="#response" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Triggering backups and transfers
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment requirements
       
     </span>
   </a>
@@ -1173,98 +1200,101 @@
   
 
 
-<h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
-<p>VLBackup is intended to run as a <strong>sidecar</strong> to VictoriaLogs storage nodes, sharing the data volume. It is easiest to use with a VictoriaLogs single deployment.</p>
-<h2 id="container-image">Container image<a class="headerlink" href="#container-image" title="Permanent link">&para;</a></h2>
-<p>Multi-arch images (<code>linux/amd64</code>, <code>linux/arm64</code>) are published to GitHub Container Registry, built from a distroless base:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ghcr.io/sbordeyne/vlbackup:latest
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>ghcr.io/sbordeyne/vlbackup:v1.0.2
-</code></pre></div>
-<p>Releases are cut by <a href="https://goreleaser.com/">GoReleaser</a> whenever a <code>v*</code> tag is pushed (see <code>.goreleaser.yaml</code> and <code>.github/workflows/release.yaml</code>), which also publishes <code>tar.gz</code> binary archives.</p>
-<h2 id="helm-sidecar-example">Helm sidecar example<a class="headerlink" href="#helm-sidecar-example" title="Permanent link">&para;</a></h2>
-<p>Example <code>victoria-logs-single</code> Helm chart values that add vlbackup as a sidecar and mount a GCS service-account key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">server</span><span class="p">:</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">extraVolumes</span><span class="p">:</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google-credentials</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">secret</span><span class="p">:</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">backup-credentials</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">extraContainers</span><span class="p">:</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">snapshot</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/sbordeyne/vlbackup:v1.0.2</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="nt">args</span><span class="p">:</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">--victoria-logs-url=http://localhost:9428</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">--victoria-logs-auth-key=$(VICTORIA_LOGS_AUTH_KEY)</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-api</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">          </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TCP</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">9090</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ops</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">          </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TCP</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">      </span><span class="nt">readinessProbe</span><span class="p">:</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="nt">httpGet</span><span class="p">:</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/readyz</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">          </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ops</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">        </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">        </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">        </span><span class="nt">timeoutSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="nt">failureThreshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">        </span><span class="nt">successThreshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">      </span><span class="nt">livenessProbe</span><span class="p">:</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">        </span><span class="nt">httpGet</span><span class="p">:</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/healthz</span>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">          </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http-ops</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">        </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">        </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">        </span><span class="nt">timeoutSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">        </span><span class="nt">failureThreshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">        </span><span class="nt">successThreshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">      </span><span class="nt">env</span><span class="p">:</span>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">VICTORIA_LOGS_AUTH_KEY</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">victorialogs-secret</span>
-<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auth-key</span>
-<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GOOGLE_APPLICATION_CREDENTIALS</span>
-<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/secrets/google/key.json</span>
-<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
-<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">server-volume</span>
-<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/storage</span>
-<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google-credentials</span>
-<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/secrets/google</span>
-<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</code></pre></div>
+<h1 id="partition-migrate">Partition Migrate<a class="headerlink" href="#partition-migrate" title="Permanent link">&para;</a></h1>
+<p>The migrate endpoint is a superset of <a href="../partition-transfer/">transfer</a>: it moves <strong>sealed daily partitions</strong> the same way, and additionally copies <strong>today's still-open data</strong>. Use it when you want a target instance to end up with both the sealed history <em>and</em> the current day — for example when decommissioning an instance or standing up a replica.</p>
+<p>Like transfer, this path does <strong>not</strong> touch object storage.</p>
+<h2 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h2>
+<p>For each sealed day in the range, migrate behaves exactly like <a href="../partition-transfer/#flow">transfer</a> (snapshot → stream <code>tar.gz</code> → detach → attach). Today's partition cannot be snapshotted safely because it is still open, so migrate instead <strong>queries</strong> it out of the source VictoriaLogs over LogsQL as streamed JSONLine and <strong>ingests</strong> it into the target's JSON stream API.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    autonumber
+    participant Op as Caller
+    participant Src as vlbackup (source)
+    participant SrcVL as VictoriaLogs (source)
+    participant Tgt as vlbackup (target)
+    participant TgtIns as VictoriaLogs insert (target)
+    participant TgtSel as VictoriaLogs select (target)
+
+    Op-&gt;&gt;Src: POST /v1/vlbackup/migrate
+    loop each sealed day in range
+        Note over Src,Tgt: same as transfer (snapshot, stream, detach, attach)
+    end
+    Src-&gt;&gt;SrcVL: GET /select/logsql/query (_time:&gt;=today)
+    SrcVL--&gt;&gt;Src: JSONLine stream
+    Src-&gt;&gt;TgtIns: POST /insert/jsonline (stream)
+    Src-&gt;&gt;SrcVL: count today's rows
+    Src-&gt;&gt;TgtSel: count today's rows
+    Src--&gt;&gt;Op: {transferred, skipped, errors, recent}</code></pre>
+<h2 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h2>
+<p><code>MigrateRequest</code> mirrors the transfer body but carries the three target URLs so the source can reach the target's vlbackup, insert, and select APIs directly:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>target_vlbackup_url</code></td>
+<td>yes</td>
+<td>Target vlbackup sidecar — moves sealed partitions (receive/attach).</td>
+</tr>
+<tr>
+<td><code>target_vlinsert_url</code></td>
+<td>yes</td>
+<td>Target VictoriaLogs insert API — receives today's JSONLine data.</td>
+</tr>
+<tr>
+<td><code>target_vlselect_url</code></td>
+<td>yes</td>
+<td>Target VictoriaLogs select API — used only to verify ingested row counts.</td>
+</tr>
+<tr>
+<td><code>target_vl_auth_key</code></td>
+<td>no</td>
+<td>Optional VictoriaLogs <code>authKey</code> for the target insert/select calls.</td>
+</tr>
+<tr>
+<td><code>range</code></td>
+<td>yes</td>
+<td>Sealed-day range, same semantics as transfer.</td>
+</tr>
+</tbody>
+</table>
+<p>The source of the recent-data query is always the <strong>local</strong> VictoriaLogs (<code>VLBACKUP_VICTORIA_LOGS_URL</code>).</p>
+<h2 id="range-and-recent-data-semantics">Range and recent-data semantics<a class="headerlink" href="#range-and-recent-data-semantics" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Sealed days follow the <a href="../partition-transfer/#range-semantics">same range rules as transfer</a>: UTC days <code>[from, to)</code>, today excluded, moved (detached from source).</li>
+<li><strong>Today's data</strong> (<code>[today 00:00 UTC, now]</code>) is queried with <code>_time:&gt;=&lt;today&gt;</code> and <strong>copied</strong> — the source keeps it. It is <em>not</em> deleted, detached, or de-duplicated.</li>
+</ul>
 <div class="admonition warning">
-<p class="admonition-title">Match the data path</p>
-<p>The sidecar's <code>VLBACKUP_DATA_PATH</code> (default <code>/data</code>) must point at the <strong>same volume, at the same mount path</strong> VictoriaLogs uses for <code>-storageDataPath</code>. Adjust <code>volumeMounts</code> and <code>--data-path</code> accordingly.</p>
+<p class="admonition-title">Recent-data ingestion is at-least-once</p>
+<p>VictoriaLogs does <strong>not</strong> deduplicate on ingest. Because today's partition is still receiving writes, migrate copies a moving target, and <strong>re-running migrate re-inserts today's rows</strong> on the target. Run it once per target, or expect duplicated rows for the current day. Sealed days are unaffected (they are moved with 409-conflict skipping, exactly like transfer).</p>
 </div>
-<h2 id="credentials">Credentials<a class="headerlink" href="#credentials" title="Permanent link">&para;</a></h2>
-<p>Which environment variables to inject depends on the backend (see <a href="../../user-guide/object-storage/">Object Storage</a>):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">GCS (<code>gs://</code>)</label><label for="__tabbed_1_2">S3 (<code>s3://</code>)</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p>Mount a service-account key and point ADC at it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">env</span><span class="p">:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GOOGLE_APPLICATION_CREDENTIALS</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/secrets/google/key.json</span>
+<h2 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h2>
+<p>The response is the transfer response plus a <code>recent</code> object:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240113&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;20240114&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240112&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;recent&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;partition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20240115&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;bytes_ingested&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4194304</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;source_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;target_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">&quot;verified&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
 </code></pre></div>
-<p>Or rely on Workload Identity and set nothing.</p>
-</div>
-<div class="tabbed-block">
-<p>Inject credentials and endpoint from a secret:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">env</span><span class="p">:</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS_ACCESS_KEY_ID</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> secretKeyRef</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">s3-creds</span><span class="p p-Indicator">,</span><span class="nt"> key</span><span class="p">:</span><span class="w"> </span><span class="nv">access-key-id</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w"> </span><span class="p p-Indicator">}</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS_SECRET_ACCESS_KEY</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> secretKeyRef</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">s3-creds</span><span class="p p-Indicator">,</span><span class="nt"> key</span><span class="p">:</span><span class="w"> </span><span class="nv">secret-access-key</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w"> </span><span class="p p-Indicator">}</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">S3_ENDPOINT</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">s3.us-east-1.amazonaws.com</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<h2 id="triggering-backups-and-transfers">Triggering backups and transfers<a class="headerlink" href="#triggering-backups-and-transfers" title="Permanent link">&para;</a></h2>
-<p>vlbackup does not schedule anything itself — drive it from a Kubernetes <code>CronJob</code> (or any scheduler) that <code>POST</code>s to <code>/v1/vlbackup/snapshot</code> and/or <code>/v1/vlbackup/transfer</code> on the API port. See the <a href="../http-api/">HTTP API</a> and <a href="../../user-guide/partition-transfer/">Partition Transfer</a>.</p>
+<p><code>verified</code> is <code>true</code> when the target's row count for today is at least the source's. It is an <strong>advisory</strong> check: a <code>false</code> value does not fail the request (freshly ingested rows may not be queryable on the target yet, and copying is at-least-once). A genuine failure — a query, ingest, or count call erroring out — is reported in <code>errors</code> with a <code>500</code> status. Sealed-day errors are reported exactly as in transfer.</p>
+<h2 id="deployment-requirements">Deployment requirements<a class="headerlink" href="#deployment-requirements" title="Permanent link">&para;</a></h2>
+<p>All the <a href="../partition-transfer/#deployment-requirements">transfer requirements</a> apply for the sealed-day portion (shared data path, <code>/internal/partition/*</code> endpoints, shared <code>VLBACKUP_TRANSFER_AUTH_KEY</code>). Additionally, for the recent-data copy:</p>
+<ul>
+<li>The source's local VictoriaLogs must expose <code>/select/logsql/query</code>.</li>
+<li>The target's VictoriaLogs must expose <code>/insert/jsonline</code> and <code>/select/logsql/query</code>, reachable at <code>target_vlinsert_url</code> / <code>target_vlselect_url</code>.</li>
+</ul>
+<p>See the <a href="../../reference/http-api/#post-v1vlbackupmigrate">HTTP API</a> for the request/response contract.</p>
 
 
 
@@ -1287,7 +1317,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 14:23:54 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 5, 2026 15:57:10 UTC">July 5, 2026</span>
   </span>
 
     
@@ -1297,7 +1327,7 @@
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 06:19:36 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 5, 2026 15:57:10 UTC">July 5, 2026</span>
   </span>
 
     
