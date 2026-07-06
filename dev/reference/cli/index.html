@@ -12,13 +12,13 @@
         <meta name="author" content="Simon Bordeyne">
       
       
-        <link rel="canonical" href="https://sbordeyne.github.io/vlbackup/dev/user-guide/object-storage/">
+        <link rel="canonical" href="https://sbordeyne.github.io/vlbackup/dev/reference/cli/">
       
       
-        <link rel="prev" href="../configuration/">
+        <link rel="prev" href="../api-explorer/">
       
       
-        <link rel="next" href="../partition-transfer/">
+        <link rel="next" href="../metrics/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Object Storage - VLBackup</title>
+        <title>vlbackupctl CLI - VLBackup</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#object-storage" class="md-skip">
+        <a href="#vlbackupctl-cli" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Object Storage
+              vlbackupctl CLI
             
           </span>
         </div>
@@ -229,13 +229,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../getting-started/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../user-guide/getting-started/" class="md-tabs__link">
           
   
   
@@ -271,11 +269,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../reference/http-api/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../http-api/" class="md-tabs__link">
           
   
   
@@ -336,31 +336,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
             
   
   
@@ -378,7 +373,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -396,7 +391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../user-guide/getting-started/" class="md-nav__link">
         
   
   
@@ -424,7 +419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../user-guide/configuration/" class="md-nav__link">
         
   
   
@@ -449,37 +444,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Object Storage
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../user-guide/object-storage/" class="md-nav__link">
         
   
   
@@ -495,98 +463,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#gs-google-cloud-storage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        gs:// — Google Cloud Storage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#s3-aws-s3-and-s3-compatible-stores" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        s3:// — AWS S3 and S3-compatible stores
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#restoring-a-partition" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Restoring a partition
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Restoring a partition">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Flow
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#conflicts-and-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Conflicts and errors
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-another-backend" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Adding another backend
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -599,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../partition-transfer/" class="md-nav__link">
+      <a href="../../user-guide/partition-transfer/" class="md-nav__link">
         
   
   
@@ -627,7 +503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../partition-migrate/" class="md-nav__link">
+      <a href="../../user-guide/partition-migrate/" class="md-nav__link">
         
   
   
@@ -661,20 +537,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
         
           
-          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
             
   
   
@@ -710,7 +583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/helm-chart/" class="md-nav__link">
+      <a href="../../user-guide/deployment/helm-chart/" class="md-nav__link">
         
   
   
@@ -738,7 +611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/operator-vlsingle/" class="md-nav__link">
+      <a href="../../user-guide/deployment/operator-vlsingle/" class="md-nav__link">
         
   
   
@@ -766,7 +639,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/operator-vlcluster/" class="md-nav__link">
+      <a href="../../user-guide/deployment/operator-vlcluster/" class="md-nav__link">
         
   
   
@@ -794,7 +667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/cronjob/" class="md-nav__link">
+      <a href="../../user-guide/deployment/cronjob/" class="md-nav__link">
         
   
   
@@ -949,26 +822,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -986,7 +864,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1004,7 +882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/http-api/" class="md-nav__link">
+      <a href="../http-api/" class="md-nav__link">
         
   
   
@@ -1032,7 +910,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-explorer/" class="md-nav__link">
+      <a href="../api-explorer/" class="md-nav__link">
         
   
   
@@ -1057,10 +935,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../reference/cli/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vlbackupctl CLI
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1076,6 +981,120 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-flags-and-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global flags and environment variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subcommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subcommands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Subcommands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transfer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        migrate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        restore
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-and-exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output and exit codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --help
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1088,7 +1107,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/metrics/" class="md-nav__link">
+      <a href="../metrics/" class="md-nav__link">
         
   
   
@@ -1116,7 +1135,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/deployment/" class="md-nav__link">
+      <a href="../deployment/" class="md-nav__link">
         
   
   
@@ -1171,10 +1190,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gs-google-cloud-storage" class="md-nav__link">
+  <a href="#global-flags-and-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        gs:// — Google Cloud Storage
+        Global flags and environment variables
       
     </span>
   </a>
@@ -1182,33 +1201,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#s3-aws-s3-and-s3-compatible-stores" class="md-nav__link">
+  <a href="#subcommands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        s3:// — AWS S3 and S3-compatible stores
+        Subcommands
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#restoring-a-partition" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Restoring a partition
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Restoring a partition">
+    <nav class="md-nav" aria-label="Subcommands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#flow" class="md-nav__link">
+  <a href="#snapshot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Flow
+        snapshot
       
     </span>
   </a>
@@ -1216,10 +1224,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#conflicts-and-errors" class="md-nav__link">
+  <a href="#transfer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Conflicts and errors
+        transfer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        migrate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        restore
       
     </span>
   </a>
@@ -1232,10 +1262,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-another-backend" class="md-nav__link">
+  <a href="#output-and-exit-codes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding another backend
+        Output and exit codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --help
       
     </span>
   </a>
@@ -1262,124 +1303,241 @@
   
 
 
-<h1 id="object-storage">Object Storage<a class="headerlink" href="#object-storage" title="Permanent link">&para;</a></h1>
-<p>The <code>POST /v1/vlbackup/snapshot</code> endpoint uploads each snapshot to an object store. The <strong>destination URL scheme</strong> selects the backend, the <strong>URL host</strong> is the bucket, and the <strong>URL path</strong> is used as a key prefix. Backends are configured entirely through environment variables.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>gs://my-bucket/some/prefix/     →  backend=gcs  bucket=my-bucket  prefix=some/prefix
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>s3://my-bucket/backups/         →  backend=s3   bucket=my-bucket  prefix=backups
-</code></pre></div>
-<p>Each snapshot is streamed as one <code>tar.gz</code> object named <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> (for example <code>some/prefix/20260703.tar.gz</code>). Re-running a snapshot for the same partition <strong>overwrites</strong> the existing object.</p>
-<h2 id="gs-google-cloud-storage"><code>gs://</code> — Google Cloud Storage<a class="headerlink" href="#gs-google-cloud-storage" title="Permanent link">&para;</a></h2>
-<p>Uses <a href="https://cloud.google.com/docs/authentication/application-default-credentials">Application Default Credentials</a> (ADC).</p>
+<h1 id="vlbackupctl-cli">vlbackupctl CLI<a class="headerlink" href="#vlbackupctl-cli" title="Permanent link">&para;</a></h1>
+<p><code>vlbackupctl</code> is a small command-line client for the vlbackup <a href="../http-api/">HTTP API</a>. It turns each API endpoint into a subcommand, so you can drive snapshots, transfers, migrations and restores from a shell or a Kubernetes <a href="../../user-guide/deployment/cronjob/">CronJob</a> without hand-writing <code>curl</code> calls and JSON bodies.</p>
+<p>It ships as its own container image, <code>ghcr.io/sbordeyne/vlbackupctl</code>, tagged <code>latest</code> and <code>vX.Y.Z</code> per release. It is a stateless client: point it at a vlbackup instance with <code>--url</code> and it makes a single API call per invocation, printing the result and exiting non-zero on failure.</p>
+<h2 id="global-flags-and-environment-variables">Global flags and environment variables<a class="headerlink" href="#global-flags-and-environment-variables" title="Permanent link">&para;</a></h2>
+<p>These apply to every subcommand.</p>
 <table>
 <thead>
 <tr>
-<th>Environment variable</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>GOOGLE_APPLICATION_CREDENTIALS</code></td>
-<td>Path to a service-account key file. Omit it when using Workload Identity / metadata-server credentials.</td>
-</tr>
-<tr>
-<td><code>STORAGE_EMULATOR_HOST</code></td>
-<td>Optional <code>host:port</code> of a GCS emulator such as <a href="https://github.com/fsouza/fake-gcs-server">fake-gcs-server</a>. Honored natively by the SDK; used by the <code>example/compose.yaml</code> stack.</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;}&#39;</span>
-</code></pre></div>
-<h2 id="s3-aws-s3-and-s3-compatible-stores"><code>s3://</code> — AWS S3 and S3-compatible stores<a class="headerlink" href="#s3-aws-s3-and-s3-compatible-stores" title="Permanent link">&para;</a></h2>
-<p>Works with AWS S3, MinIO, Ceph RADOS Gateway, Cloudflare R2, Scaleway, and other S3-compatible endpoints.</p>
-<table>
-<thead>
-<tr>
-<th>Environment variable</th>
+<th>Flag</th>
+<th>Env var</th>
 <th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>AWS_ACCESS_KEY_ID</code></td>
+<td><code>--url</code></td>
+<td><code>VLBACKUPCTL_URL</code></td>
+<td><code>http://127.0.0.1:8080</code></td>
+<td>Base URL of the vlbackup API to call.</td>
+</tr>
+<tr>
+<td><code>--timeout</code></td>
+<td><code>VLBACKUPCTL_TIMEOUT</code></td>
+<td><code>30m</code></td>
+<td>HTTP client timeout. Raise it for large transfers.</td>
+</tr>
+<tr>
+<td><code>--output</code>, <code>-o</code></td>
+<td><code>VLBACKUPCTL_OUTPUT</code></td>
+<td><code>text</code></td>
+<td>Output format: <code>text</code> (human summary) or <code>json</code> (raw response).</td>
+</tr>
+<tr>
+<td><code>--version</code></td>
 <td>—</td>
-<td>Access key.</td>
-</tr>
-<tr>
-<td><code>AWS_SECRET_ACCESS_KEY</code></td>
 <td>—</td>
-<td>Secret key.</td>
-</tr>
-<tr>
-<td><code>AWS_SESSION_TOKEN</code></td>
-<td>—</td>
-<td>Optional session token for temporary credentials.</td>
-</tr>
-<tr>
-<td><code>AWS_REGION</code></td>
-<td><em>(auto)</em></td>
-<td>Region; auto-detected when unset.</td>
-</tr>
-<tr>
-<td><code>S3_ENDPOINT</code></td>
-<td><code>s3.amazonaws.com</code></td>
-<td>Endpoint <code>host[:port]</code>. Point this at MinIO/Ceph/R2 for non-AWS stores.</td>
-</tr>
-<tr>
-<td><code>S3_USE_SSL</code></td>
-<td><code>true</code></td>
-<td>Whether to use TLS. Set <code>false</code> for a plaintext local MinIO.</td>
+<td>Print the version and exit.</td>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;s3://my-bucket/backups/&quot;}&#39;</span>
-</code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">MinIO / self-hosted endpoints</p>
-<p>The client uses automatic bucket lookup: virtual-host style for <code>*.amazonaws.com</code>, path style for everything else — which is what MinIO and most self-hosted gateways expect. No extra configuration is needed.</p>
+<div class="admonition note">
+<p class="admonition-title">Ranges use vlbackup time expressions</p>
+<p><code>--from</code> / <code>--to</code> accept the same time expressions as the API — e.g. <code>now-7d/d</code>, <code>now/d</code>, or an RFC3339 timestamp. <code>--to</code> is optional and defaults to now. See <a href="../http-api/">TimeRange</a> semantics.</p>
 </div>
-<h2 id="restoring-a-partition">Restoring a partition<a class="headerlink" href="#restoring-a-partition" title="Permanent link">&para;</a></h2>
-<p><code>POST /v1/vlbackup/restore</code> is the inverse of snapshot: it pulls one partition back out of object storage and attaches it to VictoriaLogs. The <code>source_url</code> uses the <strong>same scheme/bucket/prefix model</strong> as <code>destination_url</code> above, so a partition uploaded to <code>gs://my-bucket/vlbackup/</code> is restored from the same URL.</p>
-<p>The object key is resolved as <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> — exactly the name snapshot wrote — from the <code>partition_prefix</code> (<code>YYYYMMDD</code>) in the request:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
+<h2 id="subcommands">Subcommands<a class="headerlink" href="#subcommands" title="Permanent link">&para;</a></h2>
+<h3 id="snapshot"><code>snapshot</code><a class="headerlink" href="#snapshot" title="Permanent link">&para;</a></h3>
+<p>Snapshot each sealed day in the range to Object Storage (<code>POST /v1/vlbackup/snapshot</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--from</code></td>
+<td>yes</td>
+<td>Start of the range, inclusive (time expression, e.g. <code>now-7d/d</code>).</td>
+</tr>
+<tr>
+<td><code>--to</code></td>
+<td>no</td>
+<td>End of the range, inclusive (defaults to now).</td>
+</tr>
+<tr>
+<td><code>--dest-url</code></td>
+<td>yes</td>
+<td>Object Storage destination, e.g. <code>gs://bucket/prefix/</code> or <code>s3://bucket/prefix/</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vlbackupctl<span class="w"> </span>--url<span class="w"> </span>http://victorialogs:8080<span class="w"> </span>snapshot<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>--from<span class="w"> </span>now-2d/d<span class="w"> </span>--to<span class="w"> </span>now-1d/d<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--dest-url<span class="w"> </span>gs://my-bucket/path/to/backups
 </code></pre></div>
-<h3 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h3>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Op as Operator
-    participant VLB as vlbackup
-    participant OS as Object Storage
-    participant VL as VictoriaLogs
-
-    Op-&gt;&gt;VLB: POST /v1/vlbackup/restore
-    VLB-&gt;&gt;VLB: reject if partition already present (409)
-    VLB-&gt;&gt;OS: download &lt;prefix&gt;/&lt;partition&gt;.tar.gz
-    OS--&gt;&gt;VLB: tar.gz stream (or 404 if missing)
-    VLB-&gt;&gt;VLB: extract into temp dir, then rename into partitions/
-    VLB-&gt;&gt;VL: attach partition
-    VLB--&gt;&gt;Op: 202 {partition, bytes_written}</code></pre>
-<p>The download is streamed into a <strong>hidden temp dir on the same filesystem, then atomically renamed</strong> into <code>&lt;data-path&gt;/partitions/&lt;partition&gt;/</code> — VictoriaLogs never sees a half-written partition. A failed extraction leaves nothing behind.</p>
-<h3 id="conflicts-and-errors">Conflicts and errors<a class="headerlink" href="#conflicts-and-errors" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Partition already attached locally</strong> → <code>409 Conflict</code>. Restore refuses to overwrite a live partition; it checks before spending the download. Detach/remove it first if you really mean to replace it.</li>
-<li><strong>Snapshot missing in object storage</strong> → <code>404 Not Found</code> (the key <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> does not exist).</li>
-<li><strong>Unsupported <code>source_url</code> scheme or malformed body</strong> → <code>400 Bad Request</code>.</li>
-<li><strong>Download, extraction, or attach failure</strong> → <code>500 Internal Server Error</code>.</li>
-</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Snapshot request accepted.
+</code></pre></div>
+<h3 id="transfer"><code>transfer</code><a class="headerlink" href="#transfer" title="Permanent link">&para;</a></h3>
+<p>Move each sealed day in the range to another vlbackup instance (<code>POST /v1/vlbackup/transfer</code>). See <a href="../../user-guide/partition-transfer/">Partition Transfer</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--from</code></td>
+<td>yes</td>
+<td>Start of the range, inclusive.</td>
+</tr>
+<tr>
+<td><code>--to</code></td>
+<td>no</td>
+<td>End of the range, inclusive (defaults to now).</td>
+</tr>
+<tr>
+<td><code>--target-url</code></td>
+<td>yes</td>
+<td>Base URL of the target vlbackup instance, e.g. <code>http://target-vlbackup:8080</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>vlbackupctl<span class="w"> </span>--url<span class="w"> </span>http://victorialogs:8080<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--from<span class="w"> </span>now-1y<span class="w"> </span>--to<span class="w"> </span>now-15d/d<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>--target-url<span class="w"> </span>http://victorialogs-slow:8080
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>transferred: [20240113 20240114]
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>skipped:     [20240112]
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>errors:      []
+</code></pre></div>
+<h3 id="migrate"><code>migrate</code><a class="headerlink" href="#migrate" title="Permanent link">&para;</a></h3>
+<p>Like <code>transfer</code>, but also copies today's still-open data to the target (<code>POST /v1/vlbackup/migrate</code>). See <a href="../../user-guide/partition-migrate/">Partition Migrate</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--from</code></td>
+<td>yes</td>
+<td>Start of the sealed-day range, inclusive.</td>
+</tr>
+<tr>
+<td><code>--to</code></td>
+<td>no</td>
+<td>End of the range, inclusive (defaults to now).</td>
+</tr>
+<tr>
+<td><code>--target-vlbackup-url</code></td>
+<td>yes</td>
+<td>Target vlbackup instance (receive/attach) for sealed partitions.</td>
+</tr>
+<tr>
+<td><code>--target-vlinsert-url</code></td>
+<td>yes</td>
+<td>Target VictoriaLogs insert API, for today's data.</td>
+</tr>
+<tr>
+<td><code>--target-vlselect-url</code></td>
+<td>yes</td>
+<td>Target VictoriaLogs select API, used to verify row counts.</td>
+</tr>
+<tr>
+<td><code>--target-vl-auth-key</code></td>
+<td>no</td>
+<td>Auth key for the target VictoriaLogs insert/select APIs (env <code>VLBACKUPCTL_TARGET_VL_AUTH_KEY</code>).</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>vlbackupctl<span class="w"> </span>--url<span class="w"> </span>http://victorialogs:8080<span class="w"> </span>migrate<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--from<span class="w"> </span>now-1y<span class="w"> </span>--to<span class="w"> </span>now-15d/d<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--target-vlbackup-url<span class="w"> </span>http://victorialogs-slow:8080<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--target-vlinsert-url<span class="w"> </span>http://victorialogs-slow:9428<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>--target-vlselect-url<span class="w"> </span>http://victorialogs-slow:9428
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>transferred: [20240113 20240114]
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>skipped:     [20240112]
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>errors:      []
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>recent:      partition=20240115 bytes_ingested=4194304 source_count=1024 target_count=1024 verified=true
+</code></pre></div>
 <div class="admonition warning">
-<p class="admonition-title">Data path must match VictoriaLogs</p>
-<p>As with transfer, the sidecar writes partitions into <code>&lt;data-path&gt;/partitions/</code>, so <code>VLBACKUP_DATA_PATH</code> must equal VictoriaLogs' <code>-storageDataPath</code>. VictoriaLogs must also expose <code>/internal/partition/attach</code>.</p>
+<p class="admonition-title">Migrate is at-least-once</p>
+<p>Re-running migrate re-inserts today's rows on the target. Run it once per target. See <a href="../../user-guide/partition-migrate/">Partition Migrate</a>.</p>
 </div>
-<p>See the <a href="../../reference/http-api/#post-v1vlbackuprestore">HTTP API</a> for the full request/response contract.</p>
-<h2 id="adding-another-backend">Adding another backend<a class="headerlink" href="#adding-another-backend" title="Permanent link">&para;</a></h2>
-<p>Support for a new store (Azure Blob, Backblaze B2, …) is a single new file in <code>pkg/objstore</code>. See <a href="../../developer/architecture/#extending-storage-backends">Architecture → Extending storage backends</a> in the Developer guide.</p>
+<h3 id="restore"><code>restore</code><a class="headerlink" href="#restore" title="Permanent link">&para;</a></h3>
+<p>Download a partition snapshot from Object Storage and attach it locally (<code>POST /v1/vlbackup/restore</code>). Restore targets a single partition, not a range.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--partition-prefix</code></td>
+<td>yes</td>
+<td>Partition to restore, formatted <code>YYYYMMDD</code>.</td>
+</tr>
+<tr>
+<td><code>--source-url</code></td>
+<td>yes</td>
+<td>Object Storage source, e.g. <code>gs://bucket/prefix/</code> or <code>s3://bucket/prefix/</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>vlbackupctl<span class="w"> </span>--url<span class="w"> </span>http://victorialogs:8080<span class="w"> </span>restore<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>--partition-prefix<span class="w"> </span><span class="m">20240115</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>--source-url<span class="w"> </span>gs://my-bucket/path/to/backups
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>restored partitions: [20240115] (4194304 bytes written)
+</code></pre></div>
+<h2 id="output-and-exit-codes">Output and exit codes<a class="headerlink" href="#output-and-exit-codes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>On success the command prints a human summary (<code>text</code>) or the raw API response (<code>--output json</code>) and exits <code>0</code>.</li>
+<li>On an API error (a non-2xx response) it prints the error message to stderr and exits non-zero, so a failed CronJob is reported as a failed Job. <code>transfer</code> and <code>migrate</code> also exit non-zero when the API returns per-day errors, after printing the partial result.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>vlbackupctl<span class="w"> </span>--url<span class="w"> </span>http://victorialogs:8080<span class="w"> </span>-o<span class="w"> </span>json<span class="w"> </span>transfer<span class="w"> </span>--from<span class="w"> </span>now-7d/d<span class="w"> </span>--target-url<span class="w"> </span>http://victorialogs-slow:8080
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240113&quot;</span><span class="p">],</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240112&quot;</span><span class="p">],</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="-help"><code>--help</code><a class="headerlink" href="#-help" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>vlbackupctl 0.0.0-dev
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>Usage: vlbackupctl [--url URL] [--timeout TIMEOUT] [--output OUTPUT] &lt;command&gt; [&lt;args&gt;]
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>Options:
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  --url URL              Base URL of the vlbackup API [default: http://127.0.0.1:8080, env: VLBACKUPCTL_URL]
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  --timeout TIMEOUT      HTTP client timeout [default: 30m, env: VLBACKUPCTL_TIMEOUT]
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  --output OUTPUT, -o OUTPUT
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>                         Output format: text or json [default: text, env: VLBACKUPCTL_OUTPUT]
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  --help, -h             display this help and exit
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  --version              display version and exit
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>Commands:
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  snapshot               Snapshot a range of partitions to Object Storage
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  restore                Restore a partition from Object Storage
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>  transfer               Transfer partitions to another vlbackup instance
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  migrate                Migrate partitions and recent data to another vlbackup instance
+</code></pre></div>
+<p>Pass <code>--help</code> to any subcommand to see its own flags, e.g. <code>vlbackupctl migrate --help</code>.</p>
 
 
 
@@ -1402,7 +1560,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 16:43:37 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 6, 2026 19:51:44 UTC">July 6, 2026</span>
   </span>
 
     
@@ -1412,7 +1570,7 @@
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 4, 2026 06:19:36 UTC">July 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 6, 2026 19:51:44 UTC">July 6, 2026</span>
   </span>
 
     
