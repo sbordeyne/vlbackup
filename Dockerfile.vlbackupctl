@@ -1,0 +1,4 @@
+FROM gcr.io/distroless/static:nonroot
+ARG TARGETPLATFORM
+ENTRYPOINT ["/usr/bin/vlbackupctl"]
+COPY $TARGETPLATFORM/vlbackupctl /usr/bin/
