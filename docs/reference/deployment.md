@@ -105,4 +105,4 @@ Which environment variables to inject depends on the backend (see [Object Storag
 
 ## Triggering backups and transfers
 
-vlbackup does not schedule anything itself — drive it from a Kubernetes `CronJob` (or any scheduler) that `POST`s to `/v1/vlbackup/snapshot` and/or `/v1/vlbackup/transfer` on the API port. See the [HTTP API](http-api.md) and [Partition Transfer](../user-guide/partition-transfer.md).
+vlbackup does not schedule anything itself — drive it from a Kubernetes `CronJob` (or any scheduler) that `POST`s to `/v1/vlbackup/snapshot` and/or `/v1/vlbackup/transfer` on the API port. The ergonomic way is the [`vlbackupctl`](cli.md) image, which wraps each endpoint in a subcommand; see the ready-to-use [CronJob examples](../user-guide/deployment/cronjob.md). You can still call the API directly — see the [HTTP API](http-api.md) and [Partition Transfer](../user-guide/partition-transfer.md).

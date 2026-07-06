@@ -56,7 +56,7 @@ run = "mike serve"
 run = "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out"
 
 [tasks."lint:md"]
-run = "markdownlint-cli2 --config .markdownlint.yaml '**/*.md'"
+run = "markdownlint-cli2 '**/*.md'"
 
 [tasks."lint:yaml"]
 run = "yamllint --config-file=.yamllint.yaml ."

@@ -4,5 +4,6 @@ append_unmatched: true
 nav:
   - http-api.md
   - api-explorer.md
+  - cli.md
   - metrics.md
   - deployment.md
