@@ -25,13 +25,50 @@ dockers_v2:
     platforms:
       - linux/amd64
       - linux/arm64
+  - id: vlbackupctl
+    dockerfile: Dockerfile.vlbackupctl
+    ids:
+      - vlbackupctl
+    images:
+      - ghcr.io/sbordeyne/vlbackupctl
+    tags:
+      - v{{ .Version }}
+      - latest
+    annotations:
+      org.opencontainers.image.description: vlbackupctl is a CLI that drives the vlbackup
+        API, easing the declaration of backup/transfer/migrate cronjobs.
+      org.opencontainers.image.created: '{{.Date}}'
+      org.opencontainers.image.title: vlbackupctl
+      org.opencontainers.image.revision: '{{.FullCommit}}'
+      org.opencontainers.image.version: '{{.Version}}'
+      org.opencontainers.image.source: '{{.GitURL}}'
+      org.opencontainers.image.base.name: '{{.BaseImage}}'
+      org.opencontainers.image.base.digest: '{{.BaseImageDigest}}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
 before:
   hooks:
     - go mod tidy
 builds:
-  - main: ./cmd/vlbackup/main.go
+  - id: vlbackup
+    binary: vlbackup
+    main: ./cmd/vlbackup/main.go
     ldflags:
       - -s -w -X github.com/sbordeyne/vlbackup/pkg/cli.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - arm64
+      - amd64
+  - id: vlbackupctl
+    binary: vlbackupctl
+    main: ./cmd/vlbackupctl
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
     env:
       - CGO_ENABLED=0
     goos:

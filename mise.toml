@@ -75,7 +75,12 @@ run = '''
 
 [tasks."gen:openapi"]
 description = "Generate source files from OpenAPI specifications"
+depends = ["gen:client"]
 run = 'oapi-codegen --config .oapi-codegen.yaml openapi/schema.yaml'
+
+[tasks."gen:client"]
+description = "Generate the OpenAPI client used by vlbackupctl"
+run = 'oapi-codegen --config .oapi-codegen.client.yaml openapi/schema.yaml'
 
 [tasks."fix:yaml"]
 run = "yamlfix -c .yamlfix.toml ."
