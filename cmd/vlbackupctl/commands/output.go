@@ -29,7 +29,7 @@ func timeRange(from, to string) client.TimeRange {
 // as indented JSON; otherwise it invokes the text renderer.
 func emit(o Options, payload any, text func()) error {
 	if o.Output == "json" {
-		b, err := json.MarshalIndent(payload, "", "  ")
+		b, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("encoding response as json: %w", err)
 		}
