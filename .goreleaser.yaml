@@ -47,6 +47,28 @@ dockers_v2:
     platforms:
       - linux/amd64
       - linux/arm64
+  - id: vlbackup-alpine
+    dockerfile: Dockerfile.alpine
+    ids:
+      - vlbackup
+    images:
+      - ghcr.io/sbordeyne/vlbackup
+    tags:
+      - v{{ .Version }}-alpine
+      - latest-alpine
+    annotations:
+      org.opencontainers.image.description: vlbackup (Alpine variant) is a tool to
+        interact with VictoriaLog's backup and restore features.
+      org.opencontainers.image.created: '{{.Date}}'
+      org.opencontainers.image.title: '{{.ProjectName}}'
+      org.opencontainers.image.revision: '{{.FullCommit}}'
+      org.opencontainers.image.version: '{{.Version}}'
+      org.opencontainers.image.source: '{{.GitURL}}'
+      org.opencontainers.image.base.name: '{{.BaseImage}}'
+      org.opencontainers.image.base.digest: '{{.BaseImageDigest}}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
 before:
   hooks:
     - go mod tidy

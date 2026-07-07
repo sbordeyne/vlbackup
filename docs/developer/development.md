@@ -49,4 +49,4 @@ The nav is generated automatically from the `docs/` directory structure by the a
 
 ## Release
 
-Releases are cut by [GoReleaser](https://goreleaser.com/) when a `v*` tag is pushed (`.github/workflows/release.yaml`). It builds `linux/amd64` + `linux/arm64` binaries, publishes `tar.gz` archives, and pushes the multi-arch image to `ghcr.io/sbordeyne/vlbackup`.
+Releases are cut by [GoReleaser](https://goreleaser.com/) when a `v*` tag is pushed (`.github/workflows/release.yaml`). It builds `linux/amd64` + `linux/arm64` binaries, publishes `tar.gz` archives, and pushes the multi-arch image to `ghcr.io/sbordeyne/vlbackup` — as both a distroless image (`:latest`, `:vX.Y.Z`) and an Alpine variant (`:latest-alpine`, `:vX.Y.Z-alpine`). The `vlbackupctl` CLI is published the same way to `ghcr.io/sbordeyne/vlbackupctl`.

@@ -1,0 +1,5 @@
+FROM alpine:3.24
+RUN apk add --no-cache ca-certificates
+ARG TARGETPLATFORM
+ENTRYPOINT ["/usr/bin/vlbackup"]
+COPY $TARGETPLATFORM/vlbackup /usr/bin/
