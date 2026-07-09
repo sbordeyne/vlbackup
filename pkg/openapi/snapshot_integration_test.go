@@ -154,7 +154,7 @@ func TestTriggerIntegration(t *testing.T) {
 	}
 	defer func() { _ = r.Close() }()
 	extractDir := t.TempDir()
-	if _, err := transfer.ExtractDir(r, extractDir); err != nil {
+	if _, _, err := transfer.ExtractDir(r, extractDir); err != nil {
 		t.Fatalf("ExtractDir: %v", err)
 	}
 	partsFile := filepath.Join(extractDir, "datadb", "parts.json")

@@ -241,7 +241,10 @@ func TestTransferHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("conflict on target skips day and continues", func(t *testing.T) {
+	t.Run("conflict on target resumes attach and detach", func(t *testing.T) {
+		// A 409 means a prior interrupted run already delivered the partition to
+		// the target: the day must be completed (attached on the target, detached
+		// on the source), not skipped, so the migration can finish.
 		days := lastDays(3)
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
 		target := &fakeTarget{conflictDays: map[string]bool{days[0]: true}}
@@ -250,11 +253,12 @@ func TestTransferHandler(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
 		}
-		assertEqual(t, "skipped", resp.Skipped, days[:1])
-		assertEqual(t, "transferred", resp.Transferred, days[1:])
-		assertEqual(t, "detached", vl.detached, days[1:]) // conflict day never detached
+		assertEqual(t, "skipped", resp.Skipped, []string{})
+		assertEqual(t, "transferred", resp.Transferred, days)
+		assertEqual(t, "detached", vl.detached, days)     // conflict day detached too
+		assertEqual(t, "attached", target.attached, days) // and attached on the target
 		if len(vl.deletedSnaps) != 3 {
-			t.Errorf("deleted snapshots = %d, want 3 (conflict day snapshot cleaned too)", len(vl.deletedSnaps))
+			t.Errorf("deleted snapshots = %d, want 3", len(vl.deletedSnaps))
 		}
 	})
 

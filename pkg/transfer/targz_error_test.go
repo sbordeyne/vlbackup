@@ -12,7 +12,7 @@ import (
 )
 
 func TestStreamDirNonexistentRoot(t *testing.T) {
-	if err := transfer.StreamDir(filepath.Join(t.TempDir(), "does-not-exist"), io.Discard); err == nil {
+	if _, err := transfer.StreamDir(filepath.Join(t.TempDir(), "does-not-exist"), io.Discard); err == nil {
 		t.Error("StreamDir on missing root err = nil, want error")
 	}
 }
@@ -24,7 +24,7 @@ func TestExtractDirTarError(t *testing.T) {
 	gz := gzip.NewWriter(&buf)
 	_, _ = gz.Write([]byte("this is valid gzip but not a tar archive at all"))
 	_ = gz.Close()
-	if _, err := transfer.ExtractDir(&buf, t.TempDir()); err == nil {
+	if _, _, err := transfer.ExtractDir(&buf, t.TempDir()); err == nil {
 		t.Error("ExtractDir on non-tar gzip err = nil, want error")
 	}
 }
@@ -37,7 +37,7 @@ func TestExtractDirOpenFileError(t *testing.T) {
 		t.Fatal(err)
 	}
 	buf := buildTar(t, map[string]string{"foo": "contents"})
-	if _, err := transfer.ExtractDir(buf, dest); err == nil {
+	if _, _, err := transfer.ExtractDir(buf, dest); err == nil {
 		t.Error("ExtractDir over existing dir err = nil, want error")
 	}
 }

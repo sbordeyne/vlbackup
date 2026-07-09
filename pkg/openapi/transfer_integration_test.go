@@ -276,10 +276,12 @@ func TestTransferIntegration(t *testing.T) {
 		t.Errorf("target returned %d log lines, want 20; body starts: %.200s", lines, queryBody)
 	}
 
-	// A day whose partition already exists on the target must be skipped and
-	// left attached on the source. Ingest the same older day on both sides,
-	// then run a transfer covering it.
-	t.Run("existing target partition is skipped", func(t *testing.T) {
+	// A day whose partition already exists on the target (a 409) means a prior
+	// interrupted run already delivered it: the transfer must complete the
+	// bookkeeping — attach on the target (idempotent) and detach the source —
+	// rather than skip and strand the day. Ingest the same older day on both
+	// sides, then run a transfer covering it.
+	t.Run("existing target partition resumes and completes", func(t *testing.T) {
 		conflictDay := time.Now().UTC().AddDate(0, 0, -3)
 		conflictPartition := conflictDay.Format("20060102")
 		ingestLogs(t, sourceVL, conflictDay, 5)
@@ -305,26 +307,35 @@ func TestTransferIntegration(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 			t.Fatal(err)
 		}
-		if len(resp.Transferred) != 0 {
-			t.Errorf("transferred = %v, want none", resp.Transferred)
+		if !slices.Contains(resp.Transferred, conflictPartition) {
+			t.Errorf("transferred = %v, want %s included", resp.Transferred, conflictPartition)
 		}
-		if !slices.Contains(resp.Skipped, conflictPartition) {
-			t.Errorf("skipped = %v, want %s included", resp.Skipped, conflictPartition)
+		if slices.Contains(resp.Skipped, conflictPartition) {
+			t.Errorf("skipped = %v, want %s completed not skipped", resp.Skipped, conflictPartition)
 		}
-		// Conflict day must remain attached on the source, snapshot cleaned up.
+		// Conflict day must be detached from the source (target keeps its copy),
+		// with the source snapshot cleaned up.
 		sourcePartitions, err := sourceClient.ListPartitions("")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !slices.Contains(sourcePartitions, conflictPartition) {
-			t.Errorf("partition %s no longer attached on source after conflict skip: %v", conflictPartition, sourcePartitions)
+		if slices.Contains(sourcePartitions, conflictPartition) {
+			t.Errorf("partition %s still attached on source after resume: %v", conflictPartition, sourcePartitions)
+		}
+		// Target must still hold the day (attach is idempotent over its own copy).
+		targetPartitions, err := targetClient.ListPartitions("")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Contains(targetPartitions, conflictPartition) {
+			t.Errorf("partition %s missing on target after resume: %v", conflictPartition, targetPartitions)
 		}
 		snapshots, err := sourceClient.ListSnapshots("")
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(snapshots) != 0 {
-			t.Errorf("source snapshots not cleaned up after conflict skip: %v", snapshots)
+			t.Errorf("source snapshots not cleaned up after resume: %v", snapshots)
 		}
 	})
 }

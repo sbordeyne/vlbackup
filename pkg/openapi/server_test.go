@@ -65,7 +65,7 @@ func makeSnapshotDir(t *testing.T) string {
 func streamOf(t *testing.T, dir string) *bytes.Buffer {
 	t.Helper()
 	var buf bytes.Buffer
-	if err := transfer.StreamDir(dir, &buf); err != nil {
+	if _, err := transfer.StreamDir(dir, &buf); err != nil {
 		t.Fatal(err)
 	}
 	return &buf

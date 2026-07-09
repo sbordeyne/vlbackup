@@ -31,14 +31,18 @@ func TestStreamExtractRoundTrip(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := transfer.StreamDir(src, &buf); err != nil {
+	streamDigest, err := transfer.StreamDir(src, &buf)
+	if err != nil {
 		t.Fatalf("StreamDir: %v", err)
 	}
 
 	dest := t.TempDir()
-	written, err := transfer.ExtractDir(&buf, dest)
+	written, extractDigest, err := transfer.ExtractDir(&buf, dest)
 	if err != nil {
 		t.Fatalf("ExtractDir: %v", err)
+	}
+	if extractDigest != streamDigest {
+		t.Errorf("digest mismatch: stream %s, extract %s", streamDigest, extractDigest)
 	}
 	wantBytes := int64(len(`["18A0AD752171BFCD"]`) + 4 + 3000)
 	if written != wantBytes {
@@ -72,11 +76,11 @@ func TestStreamDirHardlinks(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := transfer.StreamDir(src, &buf); err != nil {
+	if _, err := transfer.StreamDir(src, &buf); err != nil {
 		t.Fatalf("StreamDir with hardlinks: %v", err)
 	}
 	dest := t.TempDir()
-	if _, err := transfer.ExtractDir(&buf, dest); err != nil {
+	if _, _, err := transfer.ExtractDir(&buf, dest); err != nil {
 		t.Fatalf("ExtractDir: %v", err)
 	}
 	for _, name := range []string{"original.bin", "link.bin"} {
@@ -96,7 +100,7 @@ func TestStreamDirRejectsSymlinks(t *testing.T) {
 	if err := os.Symlink("file.txt", filepath.Join(src, "sym.txt")); err != nil {
 		t.Fatal(err)
 	}
-	if err := transfer.StreamDir(src, &bytes.Buffer{}); err == nil {
+	if _, err := transfer.StreamDir(src, &bytes.Buffer{}); err == nil {
 		t.Error("StreamDir accepted a symlink, want error")
 	}
 }
@@ -133,7 +137,7 @@ func TestExtractDirRejectsTraversal(t *testing.T) {
 	for _, name := range []string{"../evil.txt", "a/../../evil.txt", "/abs/evil.txt"} {
 		t.Run(name, func(t *testing.T) {
 			buf := buildTar(t, map[string]string{name: "evil"})
-			if _, err := transfer.ExtractDir(buf, t.TempDir()); err == nil {
+			if _, _, err := transfer.ExtractDir(buf, t.TempDir()); err == nil {
 				t.Errorf("ExtractDir accepted entry %q, want error", name)
 			}
 		})
@@ -154,13 +158,42 @@ func TestExtractDirRejectsSpecialEntries(t *testing.T) {
 	}
 	_ = tw.Close()
 	_ = gz.Close()
-	if _, err := transfer.ExtractDir(&buf, t.TempDir()); err == nil {
+	if _, _, err := transfer.ExtractDir(&buf, t.TempDir()); err == nil {
 		t.Error("ExtractDir accepted a symlink entry, want error")
 	}
 }
 
 func TestExtractDirRejectsGarbage(t *testing.T) {
-	if _, err := transfer.ExtractDir(bytes.NewBufferString("not a gzip stream"), t.TempDir()); err == nil {
+	if _, _, err := transfer.ExtractDir(bytes.NewBufferString("not a gzip stream"), t.TempDir()); err == nil {
 		t.Error("ExtractDir accepted garbage input, want error")
+	}
+}
+
+// TestExtractDirRejectsCorruptedPayload flips a byte in the archived file
+// contents after StreamDir has embedded its digest: extraction must fail the
+// checksum comparison so a corrupt transfer never lands on disk.
+func TestExtractDirRejectsCorruptedPayload(t *testing.T) {
+	src := t.TempDir()
+	writeFile(t, filepath.Join(src, "data.bin"), bytes.Repeat([]byte("payload"), 500))
+
+	var buf bytes.Buffer
+	if _, err := transfer.StreamDir(src, &buf); err != nil {
+		t.Fatalf("StreamDir: %v", err)
+	}
+	// Corrupt one byte in the compressed stream. gzip's own CRC may catch some
+	// flips; either way ExtractDir must not report success.
+	raw := buf.Bytes()
+	raw[len(raw)/2] ^= 0xFF
+	if _, _, err := transfer.ExtractDir(bytes.NewReader(raw), t.TempDir()); err == nil {
+		t.Error("ExtractDir accepted a corrupted archive, want error")
+	}
+}
+
+// TestExtractDirRejectsMissingDigest ensures an archive without the trailing
+// sha1 entry (e.g. produced by an older/foreign writer) is rejected.
+func TestExtractDirRejectsMissingDigest(t *testing.T) {
+	buf := buildTar(t, map[string]string{"datadb/parts.json": "[]"})
+	if _, _, err := transfer.ExtractDir(buf, t.TempDir()); err == nil {
+		t.Error("ExtractDir accepted an archive with no digest entry, want error")
 	}
 }

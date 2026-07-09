@@ -86,7 +86,8 @@ func (s *Server) TriggerSnapshot(ctx context.Context, request TriggerSnapshotReq
 			log.Infof("Uploading snapshot %s to %s as %s", snapshotPath, destURL, key)
 			pr, pw := io.Pipe()
 			go func() {
-				pw.CloseWithError(transfer.StreamDir(transfer.SnapshotPathResolver(snapshotPath), pw))
+				_, err := transfer.StreamDir(transfer.SnapshotPathResolver(snapshotPath), pw)
+				pw.CloseWithError(err)
 			}()
 			if err := repo.Upload(ctx, key, pr); err != nil {
 				pr.CloseWithError(err)

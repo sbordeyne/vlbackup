@@ -81,6 +81,12 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 		s.metrics.TransferCount.WithLabelValues(day, "error").Inc()
 	}
 
+	// Best-effort: clear snapshots orphaned by a previously killed run so a
+	// resumed transfer starts from a clean slate. Non-fatal on failure.
+	if err := vmClient.DeleteStaleSnapshots(s.args.VictoriaLogsAuthKey); err != nil {
+		log.Warningf("failed to delete stale snapshots before transfer: %v", err)
+	}
+
 	for _, day := range days {
 		stageStart := time.Now()
 		snapshotPaths, err := vmClient.CreateSnapshot(day, s.args.VictoriaLogsAuthKey)
@@ -90,6 +96,9 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 		}
 		observeStage(day, "snapshot", stageStart)
 		if len(snapshotPaths) == 0 {
+			// Genuinely nothing on the source for this day: skip. (This is the
+			// only skip — an already-present target partition is completed
+			// below, not skipped, so an interrupted run resumes.)
 			log.Infof("No partition for day %s, skipping", day)
 			resp.Skipped = append(resp.Skipped, day)
 			s.metrics.TransferCount.WithLabelValues(day, "skipped").Inc()
@@ -104,22 +113,36 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 		}
 		snapshotPath := snapshotPaths[0]
 
+		// Stream the snapshot to the target. ErrConflict (409) means a prior
+		// run already delivered and sha1-verified this partition on the target;
+		// fall through to attach + detach so the interrupted run completes,
+		// instead of skipping and stranding the day.
 		stageStart = time.Now()
 		sent, err := peer.SendPartition(ctx, day, snapshotPath)
-		if errors.Is(err, transfer.ErrConflict) {
-			log.Infof("Partition %s already exists on target, skipping", day)
-			_ = vmClient.DeleteSnapshot(snapshotPath, s.args.VictoriaLogsAuthKey)
-			resp.Skipped = append(resp.Skipped, day)
-			s.metrics.TransferCount.WithLabelValues(day, "skipped").Inc()
-			continue
-		}
-		if err != nil {
+		alreadyOnTarget := errors.Is(err, transfer.ErrConflict)
+		if err != nil && !alreadyOnTarget {
 			_ = vmClient.DeleteSnapshot(snapshotPath, s.args.VictoriaLogsAuthKey)
 			fail(day, "stream", err)
 			break
 		}
-		observeStage(day, "stream", stageStart)
-		s.metrics.TransferBytes.WithLabelValues("sent").Add(float64(sent))
+		if alreadyOnTarget {
+			log.Infof("Partition %s already present on target, resuming attach/detach", day)
+		} else {
+			observeStage(day, "stream", stageStart)
+			s.metrics.TransferBytes.WithLabelValues("sent").Add(float64(sent))
+		}
+
+		// Attach on the target BEFORE detaching the source. Until the target
+		// confirms the attach, the source keeps its copy, so a crash anywhere up
+		// to here leaves the day recoverable (intact on the source, at worst
+		// unattached-but-verified on the target) and a re-run can finish it.
+		stageStart = time.Now()
+		if err := peer.Attach(ctx, day); err != nil {
+			_ = vmClient.DeleteSnapshot(snapshotPath, s.args.VictoriaLogsAuthKey)
+			fail(day, "attach", err)
+			break
+		}
+		observeStage(day, "attach", stageStart)
 
 		// Delete the snapshot before detaching: VictoriaLogs refuses to delete
 		// snapshots of partitions that are no longer attached.
@@ -127,21 +150,14 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 			fail(day, "snapshot_cleanup", err)
 			break
 		}
+
+		// Detach the source last, only after the target attach is confirmed.
 		stageStart = time.Now()
 		if err := vmClient.DetachPartition(day, s.args.VictoriaLogsAuthKey); err != nil {
-			fail(day, "detach", err)
+			fail(day, "detach", fmt.Errorf("%w — %s is attached on the target but still on the source; re-run to retry the detach", err, day))
 			break
 		}
 		observeStage(day, "detach", stageStart)
-
-		stageStart = time.Now()
-		if err := peer.Attach(ctx, day); err != nil {
-			// The partition is detached here and only exists unattached on the
-			// target: recover by re-calling the target's attach endpoint.
-			fail(day, "attach", fmt.Errorf("%w — data for %s is on the target but unattached, retry POST %s?partition=%s on the target vlbackup", err, day, transfer.ATTACH_PATH, day))
-			break
-		}
-		observeStage(day, "attach", stageStart)
 
 		log.Infof("Transferred partition %s (%d bytes)", day, sent)
 		resp.Transferred = append(resp.Transferred, day)

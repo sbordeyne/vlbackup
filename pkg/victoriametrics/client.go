@@ -41,6 +41,29 @@ var streamingClient = &http.Client{
 	},
 }
 
+// readBody returns up to 1 KiB of a response body as a string, for surfacing
+// VictoriaLogs' error text in wrapped errors and idempotency checks.
+func readBody(r io.Reader) string {
+	b, _ := io.ReadAll(io.LimitReader(r, 1024))
+	return string(b)
+}
+
+// bodySignals reports whether body mentions any of phrases (case-insensitive).
+// It backs the idempotency checks below: attach/detach/delete are safe to treat
+// as success when VictoriaLogs reports the partition/snapshot is already in the
+// desired state. The phrase set is intentionally broad because the exact
+// wording varies by VictoriaLogs version — verify against the target instance
+// if a genuine failure is ever masked.
+func bodySignals(body string, phrases ...string) bool {
+	lower := strings.ToLower(body)
+	for _, p := range phrases {
+		if strings.Contains(lower, p) {
+			return true
+		}
+	}
+	return false
+}
+
 func NewClient(ctx context.Context, baseUrl string) (Client, error) {
 	parsedUrl, err := url.Parse(baseUrl)
 	if err != nil {
@@ -69,7 +92,7 @@ func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, erro
 	}
 	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to create snapshot: %s", response.Status)
+		return nil, fmt.Errorf("failed to create snapshot: %s: %s", response.Status, readBody(response.Body))
 	}
 	decoder := json.NewDecoder(response.Body)
 	var snapshotPaths []string
@@ -97,10 +120,16 @@ func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 		return err
 	}
 	defer func() { _ = response.Body.Close() }()
-	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete snapshot: %s", response.Status)
+	if response.StatusCode == http.StatusOK || response.StatusCode == http.StatusNoContent {
+		return nil
 	}
-	return nil
+	// Idempotent: a snapshot already gone (e.g. a re-run after a partial
+	// transfer) is not an error.
+	body := readBody(response.Body)
+	if bodySignals(body, "not found", "no such", "does not exist", "missing") {
+		return nil
+	}
+	return fmt.Errorf("failed to delete snapshot: %s: %s", response.Status, body)
 }
 
 func (c *Client) DeleteStaleSnapshots(authKey string) error {
@@ -142,10 +171,16 @@ func (c *Client) DetachPartition(partitionName, authKey string) error {
 		return err
 	}
 	defer func() { _ = response.Body.Close() }()
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to detach partition: %s", response.Status)
+	if response.StatusCode == http.StatusOK {
+		return nil
 	}
-	return nil
+	// Idempotent: a partition already detached (e.g. resuming a run that was
+	// killed after detaching the source) is the desired end state.
+	body := readBody(response.Body)
+	if bodySignals(body, "not attached", "already detached", "not found", "no such", "does not exist", "missing") {
+		return nil
+	}
+	return fmt.Errorf("failed to detach partition: %s: %s", response.Status, body)
 }
 
 func (c *Client) AttachPartition(partitionName, authKey string) error {
@@ -165,10 +200,16 @@ func (c *Client) AttachPartition(partitionName, authKey string) error {
 		return err
 	}
 	defer func() { _ = response.Body.Close() }()
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to attach partition: %s", response.Status)
+	if response.StatusCode == http.StatusOK {
+		return nil
 	}
-	return nil
+	// Idempotent: a partition already attached (e.g. resuming a run that was
+	// killed after the target attach) is the desired end state.
+	body := readBody(response.Body)
+	if bodySignals(body, "already exists", "already attached") {
+		return nil
+	}
+	return fmt.Errorf("failed to attach partition: %s: %s", response.Status, body)
 }
 func (c *Client) ListPartitions(authKey string) ([]string, error) {
 	values := url.Values{}

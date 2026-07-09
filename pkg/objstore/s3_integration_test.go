@@ -116,7 +116,8 @@ func TestS3Integration(t *testing.T) {
 		const key = "backups/20260703.tar.gz"
 		pr, pw := io.Pipe()
 		go func() {
-			pw.CloseWithError(transfer.StreamDir(srcDir, pw))
+			_, err := transfer.StreamDir(srcDir, pw)
+			pw.CloseWithError(err)
 		}()
 		if err := repo.Upload(ctx, key, pr); err != nil {
 			t.Fatalf("Upload: %v", err)
@@ -128,7 +129,7 @@ func TestS3Integration(t *testing.T) {
 		}
 		defer func() { _ = r.Close() }()
 		destDir := t.TempDir()
-		if _, err := transfer.ExtractDir(r, destDir); err != nil {
+		if _, _, err := transfer.ExtractDir(r, destDir); err != nil {
 			t.Fatalf("ExtractDir: %v", err)
 		}
 		for name, want := range files {

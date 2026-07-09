@@ -62,11 +62,12 @@ func (s *Server) RestoreSnapshot(ctx context.Context, request RestoreSnapshotReq
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	written, err := transfer.ExtractDir(body, tmpDir)
+	written, digest, err := transfer.ExtractDir(body, tmpDir)
 	if err != nil {
 		log.Errorf("failed to extract partition %s: %v", partition, err)
 		return RestoreSnapshot500JSONResponse(errorResponse(err, 500)), nil
 	}
+	log.Infof("Verified restored partition %s (%d bytes, sha1 %s)", partition, written, digest)
 	if err := os.Rename(tmpDir, finalDir); err != nil {
 		// A concurrent restore of the same partition may have won the race.
 		if _, statErr := os.Stat(finalDir); statErr == nil {

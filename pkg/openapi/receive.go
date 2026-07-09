@@ -34,7 +34,7 @@ func (s *Server) ReceiveSnapshot(ctx context.Context, request ReceiveSnapshotReq
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	written, err := transfer.ExtractDir(request.Body, tmpDir)
+	written, digest, err := transfer.ExtractDir(request.Body, tmpDir)
 	if err != nil {
 		log.Errorf("failed to extract partition %s: %v", partition, err)
 		return ReceiveSnapshot400JSONResponse(errorResponse(err, 400)), nil
@@ -46,7 +46,7 @@ func (s *Server) ReceiveSnapshot(ctx context.Context, request ReceiveSnapshotReq
 		}
 		return ReceiveSnapshot500JSONResponse(errorResponse(err, 500)), nil
 	}
-	log.Infof("Received partition %s (%d bytes)", partition, written)
+	log.Infof("Received partition %s (%d bytes, sha1 %s verified)", partition, written, digest)
 	s.metrics.TransferBytes.WithLabelValues("received").Add(float64(written))
 	return ReceiveSnapshot200JSONResponse{Partition: partition, BytesWritten: written}, nil
 }
