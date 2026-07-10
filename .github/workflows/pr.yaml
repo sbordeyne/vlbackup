@@ -21,7 +21,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           pass_on_octokit_error: false
       - name: Add comment to fix PR title
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         if: ${{ steps.check.outputs.success == 'false'}}
         with:
           header: PR Title Check
@@ -35,7 +35,7 @@ jobs:
             * `feat(feature): add new feature`
       - name: Add comment that PR title is fixed
         if: ${{ steps.check.outputs.success == 'true'}}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: PR Title Check
           recreate: true
@@ -120,7 +120,7 @@ jobs:
           if-no-files-found: error
       - name: Post coverage report comment
         if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0  # v3.0.4
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88  # v3.0.5
         with:
           header: Coverage Report
           recreate: true
