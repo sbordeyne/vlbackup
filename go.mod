@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/storage v1.63.0
 	github.com/alexflint/go-arg v1.6.1
 	github.com/getkin/kin-openapi v0.140.0
-	github.com/go-chi/chi/v5 v5.3.0
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/moby/moby/api v1.55.0
 	github.com/oapi-codegen/runtime v1.4.2
