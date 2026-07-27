@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	cloud.google.com/go/storage v1.63.1
 	github.com/alexflint/go-arg v1.6.1
-	github.com/getkin/kin-openapi v0.142.0
+	github.com/getkin/kin-openapi v0.145.0
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/moby/moby/api v1.55.0
