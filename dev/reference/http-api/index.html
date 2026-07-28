@@ -1103,6 +1103,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#get-v1vlbackupjobsjob_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /v1/vlbackup/jobs/{job_id}
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GET /v1/vlbackup/jobs/{job_id}">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#response_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#post-v1vlbackuptransferreceive-and-attach" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1148,7 +1176,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#response_2" class="md-nav__link">
+  <a href="#response_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Response
@@ -1479,6 +1507,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#get-v1vlbackupjobsjob_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /v1/vlbackup/jobs/{job_id}
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GET /v1/vlbackup/jobs/{job_id}">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#response_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#post-v1vlbackuptransferreceive-and-attach" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1524,7 +1580,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#response_2" class="md-nav__link">
+  <a href="#response_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Response
@@ -1586,13 +1642,19 @@ are served by a <strong>separate ops server</strong> on <code>--ops-host</code> 
 <td><code>POST</code></td>
 <td><code>/v1/vlbackup/transfer</code></td>
 <td>—</td>
-<td>Transfer sealed partitions to a peer vlbackup.</td>
+<td>Start a background transfer of sealed partitions to a peer vlbackup.</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
 <td><code>/v1/vlbackup/migrate</code></td>
 <td>—</td>
-<td>Transfer sealed partitions <strong>and</strong> copy today's data.</td>
+<td>Start a background transfer <strong>and</strong> copy of today's data.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/v1/vlbackup/jobs/{job_id}</code></td>
+<td>—</td>
+<td>Poll the status of a transfer or migrate job.</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
@@ -1758,14 +1820,41 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;target_url&quot;: &quot;http://vlbackup-target:8080&quot;, &quot;range&quot;: {&quot;from&quot;: &quot;now-7d/d&quot;}}&#39;</span>
 </code></pre></div>
 <h3 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260701&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260702&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]}</span>
+<p>A transfer streams multi-GB bodies and can run for minutes or longer, far
+outliving the triggering request. So the request only validates its input and
+starts the work as a <strong>background job</strong>, returning <code>202 Accepted</code> with a job
+reference:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span><span class="nt">&quot;job_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3f2504e04f8941d39a0c0305e82c3301&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/v1/vlbackup/jobs/3f2504e04f8941d39a0c0305e82c3301&quot;</span><span class="p">}</span>
 </code></pre></div>
-<ul>
-<li><code>transferred</code> — days successfully moved to the target.</li>
-<li><code>skipped</code> — days already present on the target (source data left untouched).</li>
-<li><code>errors</code> — per-day failures.</li>
-</ul>
-<p>Status is <code>200</code> when there are no hard errors, <code>500</code> otherwise. Both carry the same <code>TransferResponse</code> summary; <code>400</code> (malformed body / invalid range or target URL) returns an <code>ErrorResponse</code> instead.</p>
+<p>Poll <code>status_url</code> (see <a href="#get-v1vlbackupjobsjob_id"><code>GET /v1/vlbackup/jobs/{job_id}</code></a>)
+for progress and the final per-day outcome. <code>vlbackupctl transfer</code> polls for you
+and prints the result (pass <code>--no-wait</code> to just get the job id).</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>202 Accepted</code></td>
+<td>Transfer validated and started; body is the job reference.</td>
+</tr>
+<tr>
+<td><code>400 Bad Request</code></td>
+<td>Malformed body, invalid range, or invalid target URL (<code>ErrorResponse</code>).</td>
+</tr>
+<tr>
+<td><code>409 Conflict</code></td>
+<td>A transfer or migrate job is already running (only one runs at a time).</td>
+</tr>
+</tbody>
+</table>
+<p>Only one transfer/migrate runs at a time: both create VictoriaLogs snapshots and
+clear stale snapshots globally, so concurrent runs would race. Jobs are held in
+memory and are lost on restart, which is safe because transfers are idempotent
+and re-runnable.</p>
 <h2 id="post-v1vlbackupmigrate"><code>POST /v1/vlbackup/migrate</code><a class="headerlink" href="#post-v1vlbackupmigrate" title="Permanent link">&para;</a></h2>
 <p>A superset of <code>/transfer</code>: it moves sealed partitions the same way <strong>and</strong> copies today's still-open data at the record level (LogsQL query → JSON stream ingest). See <a href="../../user-guide/partition-migrate/">Partition Migrate</a> for the full mechanism.</p>
 <h3 id="request-body_2">Request body<a class="headerlink" href="#request-body_2" title="Permanent link">&para;</a></h3>
@@ -1825,6 +1914,11 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
 <p>VictoriaLogs does not deduplicate on ingest, so <strong>re-running migrate re-inserts today's rows</strong> on the target. Sealed days are unaffected.</p>
 </div>
 <h3 id="response_1">Response<a class="headerlink" href="#response_1" title="Permanent link">&para;</a></h3>
+<p>Like transfer, migration runs as a <strong>background job</strong>: the request returns <code>202
+Accepted</code> with a <code>{job_id, status_url}</code> reference (same shape as transfer), or
+<code>409</code> when a job is already running. Poll the
+<a href="#get-v1vlbackupjobsjob_id">job status</a>; once terminal, its <code>migrate</code> field
+holds the outcome:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260701&quot;</span><span class="p">],</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
@@ -1838,7 +1932,61 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
 <a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="p">}</span>
 </code></pre></div>
-<p>The sealed-day fields match <code>TransferResponse</code>. <code>recent.verified</code> is <code>true</code> when the target's today row count is at least the source's — an <strong>advisory</strong> check that does not by itself fail the request (freshly ingested rows may lag in query visibility, and copying is at-least-once). Genuine query/ingest/count failures are reported in <code>errors</code> with a <code>500</code> status.</p>
+<p>The sealed-day fields match <code>TransferResponse</code>. <code>recent.verified</code> is <code>true</code> when the target's today row count is at least the source's — an <strong>advisory</strong> check that does not by itself fail the job (freshly ingested rows may lag in query visibility, and copying is at-least-once). Genuine query/ingest/count failures land in <code>errors</code>, and any per-day or recent error marks the job <code>failed</code>.</p>
+<h2 id="get-v1vlbackupjobsjob_id"><code>GET /v1/vlbackup/jobs/{job_id}</code><a class="headerlink" href="#get-v1vlbackupjobsjob_id" title="Permanent link">&para;</a></h2>
+<p>Returns the current state of a background transfer or migrate job, by the id
+returned from those endpoints.</p>
+<h3 id="response_2">Response<a class="headerlink" href="#response_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;job_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3f2504e04f8941d39a0c0305e82c3301&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transfer&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;succeeded&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;started_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-07-05T08:00:00Z&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nt">&quot;finished_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-07-05T08:12:30Z&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="nt">&quot;transfer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260701&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]}</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><code>transfer</code> or <code>migrate</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td><code>running</code>, <code>succeeded</code>, or <code>failed</code>. <code>succeeded</code>/<code>failed</code> are terminal.</td>
+</tr>
+<tr>
+<td><code>started_at</code></td>
+<td>When the job started (RFC3339).</td>
+</tr>
+<tr>
+<td><code>finished_at</code></td>
+<td>When it reached a terminal state; absent while running.</td>
+</tr>
+<tr>
+<td><code>transfer</code></td>
+<td>The <code>TransferResponse</code> outcome, present once a finished job's <code>kind</code> is <code>transfer</code>.</td>
+</tr>
+<tr>
+<td><code>migrate</code></td>
+<td>The <code>MigrateResponse</code> outcome, present once a finished job's <code>kind</code> is <code>migrate</code>.</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>A setup error that stopped the job before any per-day outcome (e.g. the source VL client could not be created).</td>
+</tr>
+</tbody>
+</table>
+<p>A job ends <code>failed</code> when it hit a setup error <strong>or</strong> any per-day/recent error;
+otherwise <code>succeeded</code>. <code>404</code> is returned for an unknown id (jobs are in-memory
+and lost on restart).</p>
 <h2 id="post-v1vlbackuptransferreceive-and-attach"><code>POST /v1/vlbackup/transfer/receive</code> and <code>/attach</code><a class="headerlink" href="#post-v1vlbackuptransferreceive-and-attach" title="Permanent link">&para;</a></h2>
 <p>These are the <strong>target-side</strong> endpoints, called by the source vlbackup — not by operators. They are protected by the shared bearer token when <code>VLBACKUP_TRANSFER_AUTH_KEY</code> is set.</p>
 <ul>
@@ -1847,16 +1995,16 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
 </ul>
 <p>Both return <code>401</code> when the bearer token is missing or wrong.</p>
 <p>If the source dies between detaching and attaching, the data is present but unattached on the target; recover manually:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-XPOST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=20260702&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-XPOST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="s2">&quot;http://vlbackup-target:8080/v1/vlbackup/transfer/attach?partition=20260702&quot;</span>
 </code></pre></div>
 <h2 id="post-v1vlbackuprestore"><code>POST /v1/vlbackup/restore</code><a class="headerlink" href="#post-v1vlbackuprestore" title="Permanent link">&para;</a></h2>
 <p>Downloads a partition snapshot (a <code>tar.gz</code>) from <code>source_url</code>, extracts it into the local data path and attaches it to VictoriaLogs.</p>
 <h3 id="request-body_3">Request body<a class="headerlink" href="#request-body_3" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;source_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gs://my-bucket/vlbackup/&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;partition_prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20260703&quot;</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;source_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gs://my-bucket/vlbackup/&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;partition_prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20260703&quot;</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="p">}</span>
 </code></pre></div>
 <table>
 <thead>
@@ -1880,12 +2028,12 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
 </tbody>
 </table>
 <h3 id="example_2">Example<a class="headerlink" href="#example_2" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://vlbackup:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
 </code></pre></div>
-<h3 id="response_2">Response<a class="headerlink" href="#response_2" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span><span class="nt">&quot;partition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260703&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;bytes_written&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4194304</span><span class="p">}</span>
+<h3 id="response_3">Response<a class="headerlink" href="#response_3" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">{</span><span class="nt">&quot;partition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20260703&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;bytes_written&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4194304</span><span class="p">}</span>
 </code></pre></div>
 <p><code>partition</code> is an array (a single-element list of the restored <code>YYYYMMDD</code>); <code>bytes_written</code> is the byte count extracted to disk.</p>
 <table>
@@ -1941,7 +2089,7 @@ never snapshotted. To snapshot only yesterday, use <code>{"from": "now-1d/d"}</c
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 5, 2026 15:57:10 UTC">July 5, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 28, 2026 08:37:17 UTC">July 28, 2026</span>
   </span>
 
     

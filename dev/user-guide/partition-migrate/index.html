@@ -1243,6 +1243,8 @@
     participant TgtSel as VictoriaLogs select (target)
 
     Op-&gt;&gt;Src: POST /v1/vlbackup/migrate
+    Src--&gt;&gt;Op: 202 {job_id, status_url}
+    Note over Op,Src: Op polls GET /v1/vlbackup/jobs/{job_id}
     loop each sealed day in range
         Note over Src,Tgt: same as transfer (snapshot, stream, detach, attach)
     end
@@ -1251,7 +1253,7 @@
     Src-&gt;&gt;TgtIns: POST /insert/jsonline (stream)
     Src-&gt;&gt;SrcVL: count today's rows
     Src-&gt;&gt;TgtSel: count today's rows
-    Src--&gt;&gt;Op: {transferred, skipped, errors, recent}</code></pre>
+    Src--&gt;&gt;Op: job succeeded/failed {transferred, skipped, errors, recent}</code></pre>
 <h2 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h2>
 <p><code>MigrateRequest</code> mirrors the transfer body but carries the three target URLs so the source can reach the target's vlbackup, insert, and select APIs directly:</p>
 <table>
@@ -1301,7 +1303,9 @@
 <p>VictoriaLogs does <strong>not</strong> deduplicate on ingest. Because today's partition is still receiving writes, migrate copies a moving target, and <strong>re-running migrate re-inserts today's rows</strong> on the target. Run it once per target, or expect duplicated rows for the current day. Sealed days are unaffected (they are moved with 409-conflict skipping, exactly like transfer).</p>
 </div>
 <h2 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h2>
-<p>The response is the transfer response plus a <code>recent</code> object:</p>
+<p>Migration runs as a background job (<code>202</code> + <code>{job_id, status_url}</code>, same as
+<a href="../partition-transfer/">transfer</a>); poll the job status. Its <code>migrate</code> field is
+the transfer response plus a <code>recent</code> object:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;transferred&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240113&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;20240114&quot;</span><span class="p">],</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;skipped&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;20240112&quot;</span><span class="p">],</span>
@@ -1315,7 +1319,7 @@
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
 </code></pre></div>
-<p><code>verified</code> is <code>true</code> when the target's row count for today is at least the source's. It is an <strong>advisory</strong> check: a <code>false</code> value does not fail the request (freshly ingested rows may not be queryable on the target yet, and copying is at-least-once). A genuine failure — a query, ingest, or count call erroring out — is reported in <code>errors</code> with a <code>500</code> status. Sealed-day errors are reported exactly as in transfer.</p>
+<p><code>verified</code> is <code>true</code> when the target's row count for today is at least the source's. It is an <strong>advisory</strong> check: a <code>false</code> value does not fail the job (freshly ingested rows may not be queryable on the target yet, and copying is at-least-once). A genuine failure — a query, ingest, or count call erroring out — lands in <code>errors</code> and marks the job <code>failed</code>. Sealed-day errors are reported exactly as in transfer.</p>
 <h2 id="deployment-requirements">Deployment requirements<a class="headerlink" href="#deployment-requirements" title="Permanent link">&para;</a></h2>
 <p>All the <a href="../partition-transfer/#deployment-requirements">transfer requirements</a> apply for the sealed-day portion (shared data path, <code>/internal/partition/*</code> endpoints, shared <code>VLBACKUP_TRANSFER_AUTH_KEY</code>). Additionally, for the recent-data copy:</p>
 <ul>
@@ -1345,7 +1349,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 5, 2026 15:57:10 UTC">July 5, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 28, 2026 08:37:17 UTC">July 28, 2026</span>
   </span>
 
     
