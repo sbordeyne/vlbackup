@@ -163,8 +163,12 @@ the call fails, so a failed backup surfaces as a failed Job.
     ```
 
 !!! tip "Long-running jobs"
-    `transfer` and `migrate` can take a while over large ranges. `vlbackupctl`
-    defaults to a `30m` HTTP timeout (`--timeout` / `VLBACKUPCTL_TIMEOUT`); raise
-    it and `activeDeadlineSeconds` together if a job needs longer.
+    `transfer` and `migrate` run as background jobs on the sidecar; `vlbackupctl`
+    starts one and then polls until it finishes. The transfer no longer rides on
+    a single long request, so the `30m` HTTP timeout (`--timeout` /
+    `VLBACKUPCTL_TIMEOUT`) now bounds each individual poll, not the whole run.
+    Size `activeDeadlineSeconds` to the expected total duration so the pod is not
+    killed mid-transfer (pass `--no-wait` if you want the CronJob to fire-and-forget
+    instead of blocking on the result).
 
 See the [vlbackupctl CLI reference](../../reference/cli.md) for every subcommand and flag.

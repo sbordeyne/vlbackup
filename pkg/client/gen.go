@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -19,6 +20,45 @@ import (
 const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
+
+// Defines values for JobStatusKind.
+const (
+	Migrate  JobStatusKind = "migrate"
+	Transfer JobStatusKind = "transfer"
+)
+
+// Valid indicates whether the value is a known member of the JobStatusKind enum.
+func (e JobStatusKind) Valid() bool {
+	switch e {
+	case Migrate:
+		return true
+	case Transfer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for JobStatusState.
+const (
+	Failed    JobStatusState = "failed"
+	Running   JobStatusState = "running"
+	Succeeded JobStatusState = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the JobStatusState enum.
+func (e JobStatusState) Valid() bool {
+	switch e {
+	case Failed:
+		return true
+	case Running:
+		return true
+	case Succeeded:
+		return true
+	default:
+		return false
+	}
+}
 
 // AttachResponse The outcome of attaching a partition.
 type AttachResponse struct {
@@ -34,6 +74,48 @@ type ErrorResponse struct {
 	// Error Error message describing the issue
 	Error *string `json:"error,omitempty"`
 }
+
+// JobRef A reference to a background job started by the transfer or migrate endpoints.
+type JobRef struct {
+	// JobId Identifier of the started job
+	JobId string `json:"job_id"`
+
+	// StatusUrl Relative URL to poll for the job's status
+	StatusUrl string `json:"status_url"`
+}
+
+// JobStatus The current state of a background transfer or migrate job.
+type JobStatus struct {
+	// Error A setup error that prevented the job from producing a per-day outcome, e.g. the source VictoriaLogs client could not be created
+	Error *string `json:"error,omitempty"`
+
+	// FinishedAt When the job reached a terminal state, as an RFC3339 timestamp; absent while the job is still running
+	FinishedAt *time.Time `json:"finished_at,omitempty"`
+
+	// JobId Identifier of the job
+	JobId string `json:"job_id"`
+
+	// Kind Which operation the job runs
+	Kind JobStatusKind `json:"kind"`
+
+	// Migrate The per-day and recent outcome, present once a migrate job has finished
+	Migrate *MigrateResponse `json:"migrate,omitempty"`
+
+	// StartedAt When the job started, as an RFC3339 timestamp
+	StartedAt time.Time `json:"started_at"`
+
+	// State Lifecycle state of the job; terminal states are succeeded and failed
+	State JobStatusState `json:"state"`
+
+	// Transfer The per-day outcome, present once a transfer job has finished
+	Transfer *TransferResponse `json:"transfer,omitempty"`
+}
+
+// JobStatusKind Which operation the job runs
+type JobStatusKind string
+
+// JobStatusState Lifecycle state of the job; terminal states are succeeded and failed
+type JobStatusState string
 
 // MigrateRequest Parameters for a migrate request.
 type MigrateRequest struct {
@@ -152,6 +234,9 @@ type TransferResponse struct {
 	Transferred []string `json:"transferred"`
 }
 
+// JobIdPathParam defines model for JobIdPathParam.
+type JobIdPathParam = string
+
 // PartitionQueryParam defines model for PartitionQueryParam.
 type PartitionQueryParam = string
 
@@ -255,6 +340,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetJob request
+	GetJob(ctx context.Context, jobId JobIdPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MigratePartitionsWithBody request with any body
 	MigratePartitionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -280,6 +368,18 @@ type ClientInterface interface {
 
 	// ReceiveSnapshotWithBody request with any body
 	ReceiveSnapshotWithBody(ctx context.Context, params *ReceiveSnapshotParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetJob(ctx context.Context, jobId JobIdPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetJobRequest(c.Server, jobId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) MigratePartitionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -400,6 +500,40 @@ func (c *Client) ReceiveSnapshotWithBody(ctx context.Context, params *ReceiveSna
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetJobRequest generates requests for GetJob
+func NewGetJobRequest(server string, jobId JobIdPathParam) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "job_id", jobId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/vlbackup/jobs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewMigratePartitionsRequest calls the generic MigratePartitions builder with application/json body
@@ -707,6 +841,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetJobWithResponse request
+	GetJobWithResponse(ctx context.Context, jobId JobIdPathParam, reqEditors ...RequestEditorFn) (*GetJobResponse, error)
+
 	// MigratePartitionsWithBodyWithResponse request with any body
 	MigratePartitionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MigratePartitionsResponse, error)
 
@@ -734,12 +871,43 @@ type ClientWithResponsesInterface interface {
 	ReceiveSnapshotWithBodyWithResponse(ctx context.Context, params *ReceiveSnapshotParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReceiveSnapshotResponse, error)
 }
 
+type GetJobResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *JobStatus
+	JSON404      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetJobResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetJobResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetJobResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type MigratePartitionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *MigrateResponse
+	JSON202      *JobRef
 	JSON400      *ErrorResponse
-	JSON500      *MigrateResponse
+	JSON409      *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -834,9 +1002,9 @@ func (r TriggerSnapshotResponse) ContentType() string {
 type TransferPartitionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *TransferResponse
+	JSON202      *JobRef
 	JSON400      *ErrorResponse
-	JSON500      *TransferResponse
+	JSON409      *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -930,6 +1098,15 @@ func (r ReceiveSnapshotResponse) ContentType() string {
 	return ""
 }
 
+// GetJobWithResponse request returning *GetJobResponse
+func (c *ClientWithResponses) GetJobWithResponse(ctx context.Context, jobId JobIdPathParam, reqEditors ...RequestEditorFn) (*GetJobResponse, error) {
+	rsp, err := c.GetJob(ctx, jobId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetJobResponse(rsp)
+}
+
 // MigratePartitionsWithBodyWithResponse request with arbitrary body returning *MigratePartitionsResponse
 func (c *ClientWithResponses) MigratePartitionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MigratePartitionsResponse, error) {
 	rsp, err := c.MigratePartitionsWithBody(ctx, contentType, body, reqEditors...)
@@ -1016,6 +1193,39 @@ func (c *ClientWithResponses) ReceiveSnapshotWithBodyWithResponse(ctx context.Co
 	return ParseReceiveSnapshotResponse(rsp)
 }
 
+// ParseGetJobResponse parses an HTTP response from a GetJobWithResponse call
+func ParseGetJobResponse(rsp *http.Response) (*GetJobResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetJobResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseMigratePartitionsResponse parses an HTTP response from a MigratePartitionsWithResponse call
 func ParseMigratePartitionsResponse(rsp *http.Response) (*MigratePartitionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1030,12 +1240,12 @@ func ParseMigratePartitionsResponse(rsp *http.Response) (*MigratePartitionsRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MigrateResponse
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest JobRef
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest ErrorResponse
@@ -1044,12 +1254,12 @@ func ParseMigratePartitionsResponse(rsp *http.Response) (*MigratePartitionsRespo
 		}
 		response.JSON400 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest MigrateResponse
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON500 = &dest
+		response.JSON409 = &dest
 
 	}
 
@@ -1157,12 +1367,12 @@ func ParseTransferPartitionsResponse(rsp *http.Response) (*TransferPartitionsRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TransferResponse
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest JobRef
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest ErrorResponse
@@ -1171,12 +1381,12 @@ func ParseTransferPartitionsResponse(rsp *http.Response) (*TransferPartitionsRes
 		}
 		response.JSON400 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest TransferResponse
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON500 = &dest
+		response.JSON409 = &dest
 
 	}
 

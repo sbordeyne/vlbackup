@@ -14,6 +14,7 @@ type MigrateCmd struct {
 	TargetVlinsertUrl string `arg:"--target-vlinsert-url,required" help:"Base URL of the target VictoriaLogs insert API"`
 	TargetVlselectUrl string `arg:"--target-vlselect-url,required" help:"Base URL of the target VictoriaLogs select API"`
 	TargetVlAuthKey   string `arg:"--target-vl-auth-key,env:VLBACKUPCTL_TARGET_VL_AUTH_KEY" help:"Optional auth key for the target VictoriaLogs insert/select APIs"`
+	NoWait            bool   `arg:"--no-wait" help:"Return the job id immediately instead of polling until the migration finishes"`
 }
 
 func (m *MigrateCmd) Run(ctx context.Context, c *client.ClientWithResponses, o Options) error {
@@ -33,16 +34,24 @@ func (m *MigrateCmd) Run(ctx context.Context, c *client.ClientWithResponses, o O
 	}
 
 	switch resp.StatusCode() {
-	case 200:
-		return emit(o, resp.JSON200, func() { printMigrate(resp.JSON200) })
+	case 202:
+		// The migration runs as a background job; poll it to completion (unless
+		// --no-wait) and render its final per-day and recent outcome.
+		status, err := waitForJob(ctx, c, resp.JSON202, m.NoWait)
+		if err != nil || status == nil {
+			return err
+		}
+		_ = emit(o, status, func() { printMigrate(status.Migrate) })
+		if status.State == client.Failed {
+			return jobFailedError("migrate", status)
+		}
+		return nil
 	case 400:
 		return apiError(resp.StatusCode(), resp.JSON400, resp.Body)
+	case 409:
+		return apiError(resp.StatusCode(), resp.JSON409, resp.Body)
 	default:
-		// 500 still carries a MigrateResponse listing per-day and recent errors.
-		if resp.JSON500 != nil {
-			_ = emit(o, resp.JSON500, func() { printMigrate(resp.JSON500) })
-		}
-		return fmt.Errorf("migrate completed with errors (HTTP %d)", resp.StatusCode())
+		return fmt.Errorf("unexpected response starting migrate (HTTP %d): %s", resp.StatusCode(), string(resp.Body))
 	}
 }
 

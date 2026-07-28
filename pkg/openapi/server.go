@@ -35,11 +35,12 @@ var partitionNameRe = regexp.MustCompile(`^\d{8}$`)
 type Server struct {
 	args    cli.Args
 	metrics *metrics.Metrics
+	jobs    *JobStore
 }
 
 // NewServer returns a Server wired with the process CLI args and metrics.
 func NewServer(args cli.Args, m *metrics.Metrics) *Server {
-	return &Server{args: args, metrics: m}
+	return &Server{args: args, metrics: m, jobs: NewJobStore()}
 }
 
 var _ StrictServerInterface = (*Server)(nil)

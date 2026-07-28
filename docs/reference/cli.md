@@ -49,6 +49,11 @@ Move each sealed day in the range to another vlbackup instance (`POST /v1/vlback
 | `--from`       | yes      | Start of the range, inclusive.                                                |
 | `--to`         | no       | End of the range, inclusive (defaults to now).                                |
 | `--target-url` | yes      | Base URL of the target vlbackup instance, e.g. `http://target-vlbackup:8080`. |
+| `--no-wait`    | no       | Print the job id and exit instead of polling the job until it finishes.       |
+
+The transfer runs as a background job on the sidecar; by default `vlbackupctl`
+polls it and prints the result. `--timeout` bounds each poll request, not the
+whole run.
 
 ```sh
 vlbackupctl --url http://victorialogs:8080 transfer \
@@ -74,6 +79,7 @@ Like `transfer`, but also copies today's still-open data to the target (`POST /v
 | `--target-vlinsert-url` | yes      | Target VictoriaLogs insert API, for today's data.                                               |
 | `--target-vlselect-url` | yes      | Target VictoriaLogs select API, used to verify row counts.                                      |
 | `--target-vl-auth-key`  | no       | Auth key for the target VictoriaLogs insert/select APIs (env `VLBACKUPCTL_TARGET_VL_AUTH_KEY`). |
+| `--no-wait`             | no       | Print the job id and exit instead of polling the job until it finishes.                         |
 
 ```sh
 vlbackupctl --url http://victorialogs:8080 migrate \

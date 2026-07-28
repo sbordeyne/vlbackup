@@ -71,19 +71,19 @@ paths:
             schema:
               $ref: '#/components/schemas/TransferRequest'
       responses:
-        '200':
-          description: Transfer completed with no hard errors
+        '202':
+          description: >-
+            Transfer accepted and started as a background job. A transfer streams
+            multi-GB bodies and can run for minutes or longer, so it outlives the
+            triggering request: poll the returned status URL for progress and the
+            final per-day outcome.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransferResponse'
+                $ref: '#/components/schemas/JobRef'
               example:
-                transferred:
-                  - '20240113'
-                  - '20240114'
-                skipped:
-                  - '20240112'
-                errors: []
+                job_id: 3f2504e04f8941d39a0c0305e82c3301
+                status_url: /v1/vlbackup/jobs/3f2504e04f8941d39a0c0305e82c3301
         '400':
           description: Bad request, e.g. malformed body, invalid range or invalid
             target URL
@@ -91,13 +91,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: One or more days failed to transfer; the response lists per-day
-            errors
+        '409':
+          description: A transfer or migrate job is already running; only one runs
+            at a time
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransferResponse'
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/vlbackup/migrate:
     post:
       tags:
@@ -121,25 +121,19 @@ paths:
             schema:
               $ref: '#/components/schemas/MigrateRequest'
       responses:
-        '200':
-          description: Migration completed with no hard errors
+        '202':
+          description: >-
+            Migration accepted and started as a background job. Migration moves
+            sealed partitions and copies today's data, so it can run for minutes
+            or longer and outlives the triggering request: poll the returned
+            status URL for progress and the final per-day and recent outcome.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MigrateResponse'
+                $ref: '#/components/schemas/JobRef'
               example:
-                transferred:
-                  - '20240113'
-                  - '20240114'
-                skipped:
-                  - '20240112'
-                errors: []
-                recent:
-                  partition: '20240115'
-                  bytes_ingested: 4194304
-                  source_count: 1024
-                  target_count: 1024
-                  verified: true
+                job_id: 3f2504e04f8941d39a0c0305e82c3301
+                status_url: /v1/vlbackup/jobs/3f2504e04f8941d39a0c0305e82c3301
         '400':
           description: Bad request, e.g. malformed body, invalid range or invalid
             target URL
@@ -147,13 +141,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: One or more days or the recent-data phase failed; the response
-            lists per-day and recent errors
+        '409':
+          description: A transfer or migrate job is already running; only one runs
+            at a time
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MigrateResponse'
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/vlbackup/jobs/{job_id}:
+    get:
+      tags:
+        - transfer
+      summary: Get the status of a transfer or migrate job
+      description: >-
+        Returns the current state of a background job started by the transfer or
+        migrate endpoints, including its per-day outcome once it reaches a
+        terminal state. Jobs are held in memory and are lost on restart.
+      operationId: get_job
+      parameters:
+        - $ref: '#/components/parameters/JobIdPathParam'
+      responses:
+        '200':
+          description: The current state of the job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+              example:
+                job_id: 3f2504e04f8941d39a0c0305e82c3301
+                kind: transfer
+                state: succeeded
+                started_at: '2024-01-15T08:00:00Z'
+                finished_at: '2024-01-15T08:12:30Z'
+                transfer:
+                  transferred:
+                    - '20240113'
+                    - '20240114'
+                  skipped:
+                    - '20240112'
+                  errors: []
+        '404':
+          description: No job exists with the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/vlbackup/transfer/receive:
     post:
       tags:
@@ -310,6 +342,18 @@ components:
       scheme: bearer
       description: Bearer token matching the configured transfer auth key
   parameters:
+    JobIdPathParam:
+      name: job_id
+      in: path
+      required: true
+      description: Identifier of a background job, as returned by the transfer or
+        migrate endpoints
+      schema:
+        type: string
+        pattern: ^[0-9a-f]{32}$
+        minLength: 32
+        maxLength: 32
+        example: 3f2504e04f8941d39a0c0305e82c3301
     PartitionQueryParam:
       name: partition
       in: query
@@ -635,6 +679,91 @@ components:
           minimum: 0
           maximum: 9007199254740991
           description: Number of bytes written to disk while extracting the snapshot
+    JobRef:
+      type: object
+      description: A reference to a background job started by the transfer or migrate
+        endpoints.
+      required:
+        - job_id
+        - status_url
+      properties:
+        job_id:
+          type: string
+          pattern: ^[0-9a-f]{32}$
+          minLength: 32
+          maxLength: 32
+          description: Identifier of the started job
+          example: 3f2504e04f8941d39a0c0305e82c3301
+        status_url:
+          type: string
+          pattern: ^[\s\S]*$
+          minLength: 1
+          maxLength: 2048
+          description: Relative URL to poll for the job's status
+          example: /v1/vlbackup/jobs/3f2504e04f8941d39a0c0305e82c3301
+    JobStatus:
+      type: object
+      description: The current state of a background transfer or migrate job.
+      required:
+        - job_id
+        - kind
+        - state
+        - started_at
+      properties:
+        job_id:
+          type: string
+          pattern: ^[0-9a-f]{32}$
+          minLength: 32
+          maxLength: 32
+          description: Identifier of the job
+          example: 3f2504e04f8941d39a0c0305e82c3301
+        kind:
+          type: string
+          enum:
+            - transfer
+            - migrate
+          description: Which operation the job runs
+          example: transfer
+        state:
+          type: string
+          enum:
+            - running
+            - succeeded
+            - failed
+          description: Lifecycle state of the job; terminal states are succeeded and
+            failed
+          example: succeeded
+        started_at:
+          type: string
+          format: date-time
+          minLength: 20
+          maxLength: 64
+          description: When the job started, as an RFC3339 timestamp
+          example: '2024-01-15T08:00:00Z'
+        finished_at:
+          type: string
+          format: date-time
+          minLength: 20
+          maxLength: 64
+          description: When the job reached a terminal state, as an RFC3339 timestamp;
+            absent while the job is still running
+          example: '2024-01-15T08:12:30Z'
+        error:
+          type: string
+          pattern: ^[\s\S]*$
+          minLength: 1
+          maxLength: 4096
+          description: A setup error that prevented the job from producing a per-day
+            outcome, e.g. the source VictoriaLogs client could not be created
+        transfer:
+          description: The per-day outcome, present once a transfer job has finished
+          allOf:
+            - $ref: '#/components/schemas/TransferResponse'
+        migrate:
+          description: The per-day and recent outcome, present once a migrate job
+            has finished
+          allOf:
+            - $ref: '#/components/schemas/MigrateResponse'
     ErrorResponse:
       type: object
       description: A structured error returned when a request cannot be fulfilled.

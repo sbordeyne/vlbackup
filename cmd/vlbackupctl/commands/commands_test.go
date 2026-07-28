@@ -60,6 +60,26 @@ func writeJSON(w http.ResponseWriter, code int, body string) {
 	_, _ = io.WriteString(w, body)
 }
 
+// testJobID is the fixed job id the async-job fake hands out.
+const testJobID = "0123456789abcdef0123456789abcdef"
+
+// jobHandler serves the async job protocol the transfer/migrate commands drive:
+// the POST that starts the job answers 202 with a job ref, and the GET that
+// polls it answers 200 with statusJSON (already terminal, so the client returns
+// after one poll). onPost, when set, inspects the start request.
+func jobHandler(statusJSON string, onPost func(r *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			writeJSON(w, 200, statusJSON)
+			return
+		}
+		if onPost != nil {
+			onPost(r)
+		}
+		writeJSON(w, 202, `{"job_id":"`+testJobID+`","status_url":"/v1/vlbackup/jobs/`+testJobID+`"}`)
+	}
+}
+
 func TestTimeRange(t *testing.T) {
 	tr := timeRange("now-1d/d", "")
 	if tr.From != "now-1d/d" || tr.To != nil {
@@ -152,9 +172,7 @@ func TestTransferRun(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ok text", func(t *testing.T) {
-		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, 200, `{"transferred":["20240113"],"skipped":["20240112"],"errors":[]}`)
-		})
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"succeeded","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":["20240113"],"skipped":["20240112"],"errors":[]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{Output: "text"}) })
 		if err != nil || !strings.Contains(out, "20240113") {
@@ -163,12 +181,20 @@ func TestTransferRun(t *testing.T) {
 	})
 
 	t.Run("ok json", func(t *testing.T) {
-		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, 200, `{"transferred":[],"skipped":[],"errors":[]}`)
-		})
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"succeeded","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":[],"skipped":[],"errors":[]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{Output: "json"}) })
 		if err != nil || !strings.Contains(out, "transferred") {
+			t.Fatalf("err=%v out=%q", err, out)
+		}
+	})
+
+	t.Run("no wait returns job id", func(t *testing.T) {
+		nw := &TransferCmd{From: "now-1d/d", TargetUrl: "http://t:8080", NoWait: true}
+		c, _ := newClient(t, jobHandler("", nil))
+		var err error
+		out := capture(t, func() { err = nw.Run(ctx, c, Options{Output: "text"}) })
+		if err != nil || !strings.Contains(out, testJobID) {
 			t.Fatalf("err=%v out=%q", err, out)
 		}
 	})
@@ -182,10 +208,17 @@ func TestTransferRun(t *testing.T) {
 		}
 	})
 
-	t.Run("errors with body", func(t *testing.T) {
+	t.Run("conflict", func(t *testing.T) {
 		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, 500, `{"transferred":[],"skipped":[],"errors":["20240112: boom"]}`)
+			writeJSON(w, 409, `{"error":"a transfer or migrate job is already running"}`)
 		})
+		if err := cmd.Run(ctx, c, Options{}); err == nil || !strings.Contains(err.Error(), "already running") {
+			t.Fatalf("err: %v", err)
+		}
+	})
+
+	t.Run("job failed with per-day errors", func(t *testing.T) {
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"failed","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":[],"skipped":[],"errors":["20240112: boom"]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{}) })
 		if err == nil || !strings.Contains(err.Error(), "errors") {
@@ -196,7 +229,7 @@ func TestTransferRun(t *testing.T) {
 		}
 	})
 
-	t.Run("errors nil body", func(t *testing.T) {
+	t.Run("unexpected start status", func(t *testing.T) {
 		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) })
 		if err := cmd.Run(ctx, c, Options{}); err == nil {
 			t.Fatal("expected error")
@@ -276,13 +309,18 @@ func TestMigrateRun(t *testing.T) {
 	}
 
 	t.Run("ok text with recent and authkey", func(t *testing.T) {
-		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			body, _ := io.ReadAll(r.Body)
-			if !strings.Contains(string(body), authKey) {
-				t.Errorf("auth key not sent: %s", body)
-			}
-			writeJSON(w, 200, `{"transferred":["20240113"],"skipped":[],"errors":[],"recent":{"partition":"20240115","bytes_ingested":4194304,"source_count":1024,"target_count":1024,"verified":true}}`)
-		})
+		c, _ := newClient(t, jobHandler(
+			`{"job_id":"`+testJobID+`","kind":"migrate","state":"succeeded","started_at":"2024-01-15T08:00:00Z","migrate":{"transferred":["20240113"],"skipped":[],"errors":[],"recent":{"partition":"20240115","bytes_ingested":4194304,"source_count":1024,"target_count":1024,"verified":true}}}`,
+			func(r *http.Request) {
+				// Only the start request (POST) carries the migrate body.
+				if r.Method != http.MethodPost {
+					return
+				}
+				body, _ := io.ReadAll(r.Body)
+				if !strings.Contains(string(body), authKey) {
+					t.Errorf("auth key not sent: %s", body)
+				}
+			}))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{Output: "text"}) })
 		if err != nil || !strings.Contains(out, "verified=true") {
@@ -292,9 +330,7 @@ func TestMigrateRun(t *testing.T) {
 
 	t.Run("ok json no authkey", func(t *testing.T) {
 		bare := &MigrateCmd{From: "now-1d/d", TargetVlbackupUrl: "u", TargetVlinsertUrl: "u", TargetVlselectUrl: "u"}
-		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, 200, `{"transferred":[],"skipped":[],"errors":[]}`)
-		})
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"migrate","state":"succeeded","started_at":"2024-01-15T08:00:00Z","migrate":{"transferred":[],"skipped":[],"errors":[]}}`, nil))
 		var err error
 		out := capture(t, func() { err = bare.Run(ctx, c, Options{Output: "json"}) })
 		if err != nil || !strings.Contains(out, "transferred") {
@@ -311,10 +347,8 @@ func TestMigrateRun(t *testing.T) {
 		}
 	})
 
-	t.Run("errors with body", func(t *testing.T) {
-		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, 500, `{"transferred":[],"skipped":[],"errors":["recent phase failed"]}`)
-		})
+	t.Run("job failed with recent error", func(t *testing.T) {
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"migrate","state":"failed","started_at":"2024-01-15T08:00:00Z","migrate":{"transferred":[],"skipped":[],"errors":["recent phase failed"]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{}) })
 		if err == nil || !strings.Contains(out, "recent phase failed") {
@@ -322,7 +356,7 @@ func TestMigrateRun(t *testing.T) {
 		}
 	})
 
-	t.Run("errors nil body", func(t *testing.T) {
+	t.Run("unexpected start status", func(t *testing.T) {
 		c, _ := newClient(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) })
 		if err := cmd.Run(ctx, c, Options{}); err == nil {
 			t.Fatal("expected error")

@@ -215,13 +215,14 @@ func TestTransferIntegration(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
+	if rec.Code != http.StatusAccepted {
 		t.Fatalf("transfer status = %d, body %s", rec.Code, rec.Body.String())
 	}
-	var resp openapi.TransferResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatal(err)
+	status := waitJob(t, handler, rec)
+	if status.State != openapi.Succeeded || status.Transfer == nil {
+		t.Fatalf("transfer job = %+v", status)
 	}
+	resp := *status.Transfer
 	if !slices.Equal(resp.Transferred, days) {
 		t.Errorf("transferred = %v, want %v", resp.Transferred, days)
 	}
@@ -300,13 +301,14 @@ func TestTransferIntegration(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(body))
 		handler.ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
+		if rec.Code != http.StatusAccepted {
 			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
 		}
-		var resp openapi.TransferResponse
-		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-			t.Fatal(err)
+		status := waitJob(t, handler, rec)
+		if status.State != openapi.Succeeded || status.Transfer == nil {
+			t.Fatalf("transfer job = %+v", status)
 		}
+		resp := *status.Transfer
 		if !slices.Contains(resp.Transferred, conflictPartition) {
 			t.Errorf("transferred = %v, want %s included", resp.Transferred, conflictPartition)
 		}

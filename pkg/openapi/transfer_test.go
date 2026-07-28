@@ -158,7 +158,11 @@ func transferBody(t *testing.T, targetURL, from string) []byte {
 	return body
 }
 
-func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (*httptest.ResponseRecorder, openapi.TransferResponse) {
+// doTransfer POSTs a transfer, waits for the background job to finish, and
+// returns a synthetic HTTP-style code (200 when the job succeeded, 500 when it
+// failed) plus the job's per-day outcome, so the existing table-driven
+// assertions carry over unchanged to the async job model.
+func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (int, openapi.TransferResponse) {
 	t.Helper()
 	vlSrv := vl.server(t)
 	targetSrv := target.server(t)
@@ -167,12 +171,55 @@ func doTransfer(t *testing.T, vl *fakeVL, target *fakeTarget, nDays int) (*httpt
 	from := time.Now().UTC().AddDate(0, 0, -nDays).Format(time.RFC3339)
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/transfer", bytes.NewReader(transferBody(t, targetSrv.URL, from)))
 	rec := do(h, req)
-
-	var resp openapi.TransferResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("unmarshaling response %q: %v", rec.Body.String(), err)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("transfer POST status = %d, want 202, body %s", rec.Code, rec.Body.String())
 	}
-	return rec, resp
+
+	status := waitJob(t, h, rec)
+	var resp openapi.TransferResponse
+	if status.Transfer != nil {
+		resp = *status.Transfer
+	}
+	return jobCode(status), resp
+}
+
+// jobCode maps a terminal job state to the HTTP status the endpoint used to
+// return synchronously, so tests can keep asserting on 200/500.
+func jobCode(status openapi.JobStatus) int {
+	if status.State == openapi.Failed {
+		return http.StatusInternalServerError
+	}
+	return http.StatusOK
+}
+
+// waitJob parses the JobRef from a 202 response and polls the job status
+// endpoint until the job reaches a terminal state, returning its status. It
+// fails the test on timeout so a stuck job never hangs the suite.
+func waitJob(t *testing.T, h http.Handler, accepted *httptest.ResponseRecorder) openapi.JobStatus {
+	t.Helper()
+	var ref openapi.JobRef
+	if err := json.Unmarshal(accepted.Body.Bytes(), &ref); err != nil {
+		t.Fatalf("unmarshaling job ref %q: %v", accepted.Body.String(), err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		req := httptest.NewRequest(http.MethodGet, "/v1/vlbackup/jobs/"+ref.JobId, nil)
+		rec := do(h, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("job status GET = %d, body %s", rec.Code, rec.Body.String())
+		}
+		var status openapi.JobStatus
+		if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+			t.Fatalf("unmarshaling job status %q: %v", rec.Body.String(), err)
+		}
+		if status.State != openapi.Running {
+			return status
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("job %s still running after 5s", ref.JobId)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }
 
 func TestParseTransferRange(t *testing.T) {
@@ -227,10 +274,10 @@ func TestTransferHandler(t *testing.T) {
 		days := lastDays(3)
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
 		target := &fakeTarget{}
-		rec, resp := doTransfer(t, vl, target, 3)
+		code, resp := doTransfer(t, vl, target, 3)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
 		assertEqual(t, "transferred", resp.Transferred, days)
 		assertEqual(t, "received", target.received, days)
@@ -248,10 +295,10 @@ func TestTransferHandler(t *testing.T) {
 		days := lastDays(3)
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
 		target := &fakeTarget{conflictDays: map[string]bool{days[0]: true}}
-		rec, resp := doTransfer(t, vl, target, 3)
+		code, resp := doTransfer(t, vl, target, 3)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
 		assertEqual(t, "skipped", resp.Skipped, []string{})
 		assertEqual(t, "transferred", resp.Transferred, days)
@@ -266,10 +313,10 @@ func TestTransferHandler(t *testing.T) {
 		days := lastDays(2)
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), emptyDays: map[string]bool{days[0]: true}}
 		target := &fakeTarget{}
-		rec, resp := doTransfer(t, vl, target, 2)
+		code, resp := doTransfer(t, vl, target, 2)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
 		assertEqual(t, "skipped", resp.Skipped, days[:1])
 		assertEqual(t, "transferred", resp.Transferred, days[1:])
@@ -279,10 +326,10 @@ func TestTransferHandler(t *testing.T) {
 		days := lastDays(3)
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
 		target := &fakeTarget{failDays: map[string]bool{days[1]: true}}
-		rec, resp := doTransfer(t, vl, target, 3)
+		code, resp := doTransfer(t, vl, target, 3)
 
-		if rec.Code != http.StatusInternalServerError {
-			t.Fatalf("status = %d, want 500", rec.Code)
+		if code != http.StatusInternalServerError {
+			t.Fatalf("job code = %d, want 500", code)
 		}
 		assertEqual(t, "transferred", resp.Transferred, days[:1])
 		if len(resp.Errors) != 1 {
@@ -317,17 +364,17 @@ func TestTransferHandlerStageErrors(t *testing.T) {
 
 	t.Run("create snapshot fails", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failCreateDays: map[string]bool{day: true}}
-		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
-		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
-			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		code, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", code, resp.Errors)
 		}
 	})
 
 	t.Run("multiple snapshot paths", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), multiDays: map[string]bool{day: true}}
-		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
-		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
-			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		code, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", code, resp.Errors)
 		}
 		if len(vl.deletedSnaps) != 2 {
 			t.Errorf("deletedSnaps = %d, want 2 (both stray paths cleaned)", len(vl.deletedSnaps))
@@ -336,26 +383,26 @@ func TestTransferHandlerStageErrors(t *testing.T) {
 
 	t.Run("snapshot cleanup fails", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failDelete: true}
-		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
-		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
-			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		code, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", code, resp.Errors)
 		}
 	})
 
 	t.Run("detach fails", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), failDetachDays: map[string]bool{day: true}}
-		rec, resp := doTransfer(t, vl, &fakeTarget{}, 1)
-		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
-			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		code, resp := doTransfer(t, vl, &fakeTarget{}, 1)
+		if code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", code, resp.Errors)
 		}
 	})
 
 	t.Run("attach fails", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t)}
 		target := &fakeTarget{failAttachDays: map[string]bool{day: true}}
-		rec, resp := doTransfer(t, vl, target, 1)
-		if rec.Code != http.StatusInternalServerError || len(resp.Errors) != 1 {
-			t.Errorf("code = %d, errors = %v", rec.Code, resp.Errors)
+		code, resp := doTransfer(t, vl, target, 1)
+		if code != http.StatusInternalServerError || len(resp.Errors) != 1 {
+			t.Errorf("code = %d, errors = %v", code, resp.Errors)
 		}
 	})
 }

@@ -1,11 +1,46 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/sbordeyne/vlbackup/pkg/client"
 )
+
+// jobPollInterval is how often the client polls a background job for progress.
+const jobPollInterval = 2 * time.Second
+
+// waitForJob polls a background transfer/migrate job until it reaches a terminal
+// state and returns its final status; the caller renders it. With noWait it
+// prints the job reference and returns (nil, nil) so the caller can exit early.
+func waitForJob(ctx context.Context, c *client.ClientWithResponses, ref *client.JobRef, noWait bool) (*client.JobStatus, error) {
+	if ref == nil {
+		return nil, fmt.Errorf("server accepted the job but returned no job reference")
+	}
+	if noWait {
+		fmt.Printf("job %s started; poll %s for status\n", ref.JobId, ref.StatusUrl)
+		return nil, nil
+	}
+	for {
+		resp, err := c.GetJobWithResponse(ctx, ref.JobId)
+		if err != nil {
+			return nil, fmt.Errorf("polling job %s: %w", ref.JobId, err)
+		}
+		if resp.StatusCode() != 200 {
+			return nil, apiError(resp.StatusCode(), resp.JSON404, resp.Body)
+		}
+		if resp.JSON200.State != client.Running {
+			return resp.JSON200, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(jobPollInterval):
+		}
+	}
+}
 
 // Options carries settings shared by every subcommand, populated from the
 // global CLI flags.
@@ -38,6 +73,16 @@ func emit(o Options, payload any, text func()) error {
 	}
 	text()
 	return nil
+}
+
+// jobFailedError builds the error returned when a background job ends in the
+// failed state, preferring the setup error when one is set (no per-day outcome
+// was produced) over the generic per-day-errors message.
+func jobFailedError(kind string, status *client.JobStatus) error {
+	if status.Error != nil && *status.Error != "" {
+		return fmt.Errorf("%s job %s failed: %s", kind, status.JobId, *status.Error)
+	}
+	return fmt.Errorf("%s job %s completed with errors", kind, status.JobId)
 }
 
 // apiError turns a non-2xx response carrying an ErrorResponse body into a Go

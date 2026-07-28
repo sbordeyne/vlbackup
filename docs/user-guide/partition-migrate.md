@@ -19,6 +19,8 @@ sequenceDiagram
     participant TgtSel as VictoriaLogs select (target)
 
     Op->>Src: POST /v1/vlbackup/migrate
+    Src-->>Op: 202 {job_id, status_url}
+    Note over Op,Src: Op polls GET /v1/vlbackup/jobs/{job_id}
     loop each sealed day in range
         Note over Src,Tgt: same as transfer (snapshot, stream, detach, attach)
     end
@@ -27,7 +29,7 @@ sequenceDiagram
     Src->>TgtIns: POST /insert/jsonline (stream)
     Src->>SrcVL: count today's rows
     Src->>TgtSel: count today's rows
-    Src-->>Op: {transferred, skipped, errors, recent}
+    Src-->>Op: job succeeded/failed {transferred, skipped, errors, recent}
 ```
 
 ## Request
@@ -54,7 +56,9 @@ The source of the recent-data query is always the **local** VictoriaLogs (`VLBAC
 
 ## Response
 
-The response is the transfer response plus a `recent` object:
+Migration runs as a background job (`202` + `{job_id, status_url}`, same as
+[transfer](partition-transfer.md)); poll the job status. Its `migrate` field is
+the transfer response plus a `recent` object:
 
 ```json
 {
@@ -71,7 +75,7 @@ The response is the transfer response plus a `recent` object:
 }
 ```
 
-`verified` is `true` when the target's row count for today is at least the source's. It is an **advisory** check: a `false` value does not fail the request (freshly ingested rows may not be queryable on the target yet, and copying is at-least-once). A genuine failure — a query, ingest, or count call erroring out — is reported in `errors` with a `500` status. Sealed-day errors are reported exactly as in transfer.
+`verified` is `true` when the target's row count for today is at least the source's. It is an **advisory** check: a `false` value does not fail the job (freshly ingested rows may not be queryable on the target yet, and copying is at-least-once). A genuine failure — a query, ingest, or count call erroring out — lands in `errors` and marks the job `failed`. Sealed-day errors are reported exactly as in transfer.
 
 ## Deployment requirements
 
