@@ -30,6 +30,9 @@ func (c *countingReader) Read(p []byte) (int, error) {
 // Sealed days are moved (detached from the source); today's data is copied (the
 // source is left intact) and ingestion is at-least-once — a re-run re-inserts
 // today's rows, since VictoriaLogs does not deduplicate on ingest.
+// Like transfer, migration runs as a background job (202 + a status URL) so it
+// outlives the triggering request; only the request is validated synchronously.
+// See runMigrate for the background body.
 func (s *Server) MigratePartitions(ctx context.Context, request MigratePartitionsRequestObject) (MigratePartitionsResponseObject, error) {
 	now := time.Now()
 	from, to, err := ParseTimeRange(request.Body.Range, now)
@@ -44,21 +47,63 @@ func (s *Server) MigratePartitions(ctx context.Context, request MigratePartition
 	if err != nil {
 		return MigratePartitions400JSONResponse(errorResponse(err, 400)), nil
 	}
-	insertClient, err := victoriametrics.NewClient(ctx, request.Body.TargetVlinsertUrl)
-	if err != nil {
-		return MigratePartitions400JSONResponse(errorResponse(fmt.Errorf("target_vlinsert_url: %w", err), 400)), nil
+	targetAuthKey := ""
+	if request.Body.TargetVlAuthKey != nil {
+		targetAuthKey = *request.Body.TargetVlAuthKey
 	}
-	selectClient, err := victoriametrics.NewClient(ctx, request.Body.TargetVlselectUrl)
+
+	job := s.jobs.Start(Migrate)
+	if job == nil {
+		return MigratePartitions409JSONResponse(errorResponse(errActiveJob, 409)), nil
+	}
+	m := migrateParams{
+		peer:          peer,
+		days:          days,
+		insertURL:     request.Body.TargetVlinsertUrl,
+		selectURL:     request.Body.TargetVlselectUrl,
+		targetAuthKey: targetAuthKey,
+		now:           now,
+	}
+	// Detach from the request context: see TransferPartitions.
+	go s.runMigrate(context.WithoutCancel(ctx), job.ID, m)
+	return MigratePartitions202JSONResponse(jobRef(job)), nil
+}
+
+// migrateParams carries the inputs a migrate job needs, captured from the
+// request before it returns.
+type migrateParams struct {
+	peer          *transfer.PeerClient
+	days          []string
+	insertURL     string
+	selectURL     string
+	targetAuthKey string
+	now           time.Time
+}
+
+// runMigrate is the background body of a migrate job. The VL clients are built
+// here (not in the handler) because a Client binds the context it is created
+// with, and the job must use the detached context, not the request's.
+func (s *Server) runMigrate(ctx context.Context, jobID string, m migrateParams) {
+	defer s.recoverJob(jobID, "migrate")
+
+	insertClient, err := victoriametrics.NewClient(ctx, m.insertURL)
 	if err != nil {
-		return MigratePartitions400JSONResponse(errorResponse(fmt.Errorf("target_vlselect_url: %w", err), 400)), nil
+		s.jobs.Fail(jobID, fmt.Errorf("target_vlinsert_url: %w", err))
+		return
+	}
+	selectClient, err := victoriametrics.NewClient(ctx, m.selectURL)
+	if err != nil {
+		s.jobs.Fail(jobID, fmt.Errorf("target_vlselect_url: %w", err))
+		return
 	}
 	sourceClient, err := victoriametrics.NewClient(ctx, s.args.VictoriaLogsURL.String())
 	if err != nil {
-		return MigratePartitions500JSONResponse{Transferred: []string{}, Skipped: []string{}, Errors: []string{err.Error()}}, nil
+		s.jobs.Fail(jobID, err)
+		return
 	}
 
 	// Phase 1: sealed days move exactly like a transfer.
-	sealed := s.transferSealedDays(ctx, peer, sourceClient, days)
+	sealed := s.transferSealedDays(ctx, m.peer, sourceClient, m.days)
 	resp := MigrateResponse{
 		Transferred: sealed.Transferred,
 		Skipped:     sealed.Skipped,
@@ -68,16 +113,9 @@ func (s *Server) MigratePartitions(ctx context.Context, request MigratePartition
 	// Phase 2: copy today's still-open data as streamed JSONLine. The two
 	// phases target different endpoints, so the recent copy is attempted even
 	// when a sealed day failed.
-	targetAuthKey := ""
-	if request.Body.TargetVlAuthKey != nil {
-		targetAuthKey = *request.Body.TargetVlAuthKey
-	}
-	resp.Recent = s.migrateRecent(sourceClient, insertClient, selectClient, now, targetAuthKey, &resp.Errors)
+	resp.Recent = s.migrateRecent(sourceClient, insertClient, selectClient, m.now, m.targetAuthKey, &resp.Errors)
 
-	if len(resp.Errors) > 0 {
-		return MigratePartitions500JSONResponse(resp), nil
-	}
-	return MigratePartitions200JSONResponse(resp), nil
+	s.jobs.CompleteMigrate(jobID, resp)
 }
 
 // migrateRecent exports today's (UTC) data from the source and ingests it into

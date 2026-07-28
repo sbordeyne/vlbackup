@@ -114,13 +114,14 @@ func TestMigrateIntegration(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/migrate", bytes.NewReader(body))
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
+	if rec.Code != http.StatusAccepted {
 		t.Fatalf("migrate status = %d, body %s", rec.Code, rec.Body.String())
 	}
-	var resp openapi.MigrateResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatal(err)
+	status := waitJob(t, handler, rec)
+	if status.State != openapi.Succeeded || status.Migrate == nil {
+		t.Fatalf("migrate job = %+v", status)
 	}
+	resp := *status.Migrate
 	if !slices.Equal(resp.Transferred, []string{sealedPartition}) {
 		t.Errorf("transferred = %v, want [%s]", resp.Transferred, sealedPartition)
 	}

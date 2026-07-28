@@ -12,8 +12,9 @@ For an interactive, always-in-sync view of the API, see the
 | Method | Path                          | Auth   | Purpose                                               |
 | ------ | ----------------------------- | ------ | ----------------------------------------------------- |
 | `POST` | `/v1/vlbackup/snapshot`       | —      | Snapshot a partition and upload it to object storage. |
-| `POST` | `/v1/vlbackup/transfer`       | —      | Transfer sealed partitions to a peer vlbackup.        |
-| `POST` | `/v1/vlbackup/migrate`        | —      | Transfer sealed partitions **and** copy today's data. |
+| `POST` | `/v1/vlbackup/transfer`       | —      | Start a background transfer of sealed partitions to a peer vlbackup. |
+| `POST` | `/v1/vlbackup/migrate`        | —      | Start a background transfer **and** copy of today's data. |
+| `GET`  | `/v1/vlbackup/jobs/{job_id}`  | —      | Poll the status of a transfer or migrate job.         |
 | `POST` | `/v1/vlbackup/transfer/receive` | Bearer | Target side: receive a partition stream.            |
 | `POST` | `/v1/vlbackup/transfer/attach`  | Bearer | Target side: attach a received partition.           |
 | `POST` | `/v1/vlbackup/restore`        | —      | Restore a partition from object storage.              |
@@ -114,15 +115,29 @@ curl -sL -XPOST http://vlbackup-source:8080/v1/vlbackup/transfer \
 
 ### Response
 
+A transfer streams multi-GB bodies and can run for minutes or longer, far
+outliving the triggering request. So the request only validates its input and
+starts the work as a **background job**, returning `202 Accepted` with a job
+reference:
+
 ```json
-{"transferred": ["20260701"], "skipped": ["20260702"], "errors": []}
+{"job_id": "3f2504e04f8941d39a0c0305e82c3301", "status_url": "/v1/vlbackup/jobs/3f2504e04f8941d39a0c0305e82c3301"}
 ```
 
-- `transferred` — days successfully moved to the target.
-- `skipped` — days already present on the target (source data left untouched).
-- `errors` — per-day failures.
+Poll `status_url` (see [`GET /v1/vlbackup/jobs/{job_id}`](#get-v1vlbackupjobsjob_id))
+for progress and the final per-day outcome. `vlbackupctl transfer` polls for you
+and prints the result (pass `--no-wait` to just get the job id).
 
-Status is `200` when there are no hard errors, `500` otherwise. Both carry the same `TransferResponse` summary; `400` (malformed body / invalid range or target URL) returns an `ErrorResponse` instead.
+| Status            | Meaning                                                              |
+| ----------------- | -------------------------------------------------------------------- |
+| `202 Accepted`    | Transfer validated and started; body is the job reference.           |
+| `400 Bad Request` | Malformed body, invalid range, or invalid target URL (`ErrorResponse`). |
+| `409 Conflict`    | A transfer or migrate job is already running (only one runs at a time). |
+
+Only one transfer/migrate runs at a time: both create VictoriaLogs snapshots and
+clear stale snapshots globally, so concurrent runs would race. Jobs are held in
+memory and are lost on restart, which is safe because transfers are idempotent
+and re-runnable.
 
 ## `POST /v1/vlbackup/migrate`
 
@@ -157,6 +172,12 @@ Sealed days follow the same UTC `[from, to)` rules as [transfer](#post-v1vlbacku
 
 ### Response
 
+Like transfer, migration runs as a **background job**: the request returns `202
+Accepted` with a `{job_id, status_url}` reference (same shape as transfer), or
+`409` when a job is already running. Poll the
+[job status](#get-v1vlbackupjobsjob_id); once terminal, its `migrate` field
+holds the outcome:
+
 ```json
 {
   "transferred": ["20260701"],
@@ -172,7 +193,39 @@ Sealed days follow the same UTC `[from, to)` rules as [transfer](#post-v1vlbacku
 }
 ```
 
-The sealed-day fields match `TransferResponse`. `recent.verified` is `true` when the target's today row count is at least the source's — an **advisory** check that does not by itself fail the request (freshly ingested rows may lag in query visibility, and copying is at-least-once). Genuine query/ingest/count failures are reported in `errors` with a `500` status.
+The sealed-day fields match `TransferResponse`. `recent.verified` is `true` when the target's today row count is at least the source's — an **advisory** check that does not by itself fail the job (freshly ingested rows may lag in query visibility, and copying is at-least-once). Genuine query/ingest/count failures land in `errors`, and any per-day or recent error marks the job `failed`.
+
+## `GET /v1/vlbackup/jobs/{job_id}`
+
+Returns the current state of a background transfer or migrate job, by the id
+returned from those endpoints.
+
+### Response
+
+```json
+{
+  "job_id": "3f2504e04f8941d39a0c0305e82c3301",
+  "kind": "transfer",
+  "state": "succeeded",
+  "started_at": "2026-07-05T08:00:00Z",
+  "finished_at": "2026-07-05T08:12:30Z",
+  "transfer": {"transferred": ["20260701"], "skipped": [], "errors": []}
+}
+```
+
+| Field         | Description                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| `kind`        | `transfer` or `migrate`.                                                       |
+| `state`       | `running`, `succeeded`, or `failed`. `succeeded`/`failed` are terminal.        |
+| `started_at`  | When the job started (RFC3339).                                                |
+| `finished_at` | When it reached a terminal state; absent while running.                        |
+| `transfer`    | The `TransferResponse` outcome, present once a finished job's `kind` is `transfer`. |
+| `migrate`     | The `MigrateResponse` outcome, present once a finished job's `kind` is `migrate`.   |
+| `error`       | A setup error that stopped the job before any per-day outcome (e.g. the source VL client could not be created). |
+
+A job ends `failed` when it hit a setup error **or** any per-day/recent error;
+otherwise `succeeded`. `404` is returned for an unknown id (jobs are in-memory
+and lost on restart).
 
 ## `POST /v1/vlbackup/transfer/receive` and `/attach`
 

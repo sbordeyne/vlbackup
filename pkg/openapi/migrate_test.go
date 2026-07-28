@@ -83,7 +83,10 @@ func migrateBody(t *testing.T, vlbackupURL, insertURL, selectURL, from string) [
 	return body
 }
 
-func doMigrate(t *testing.T, vl *fakeVL, target *fakeTarget, tl *fakeTargetLogs, nDays int) (*httptest.ResponseRecorder, openapi.MigrateResponse) {
+// doMigrate POSTs a migrate, waits for the background job, and returns a
+// synthetic HTTP-style code (200 succeeded, 500 failed) plus the job's outcome,
+// mirroring doTransfer so the existing assertions carry over.
+func doMigrate(t *testing.T, vl *fakeVL, target *fakeTarget, tl *fakeTargetLogs, nDays int) (int, openapi.MigrateResponse) {
 	t.Helper()
 	vlSrv := vl.server(t)
 	targetSrv := target.server(t)
@@ -94,12 +97,16 @@ func doMigrate(t *testing.T, vl *fakeVL, target *fakeTarget, tl *fakeTargetLogs,
 	req := httptest.NewRequest(http.MethodPost, "/v1/vlbackup/migrate",
 		bytes.NewReader(migrateBody(t, targetSrv.URL, tlSrv.URL, tlSrv.URL, from)))
 	rec := do(h, req)
-
-	var resp openapi.MigrateResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("unmarshaling response %q: %v", rec.Body.String(), err)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("migrate POST status = %d, want 202, body %s", rec.Code, rec.Body.String())
 	}
-	return rec, resp
+
+	status := waitJob(t, h, rec)
+	var resp openapi.MigrateResponse
+	if status.Migrate != nil {
+		resp = *status.Migrate
+	}
+	return jobCode(status), resp
 }
 
 func TestMigrateHandler(t *testing.T) {
@@ -108,10 +115,10 @@ func TestMigrateHandler(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), recentLines: 5}
 		target := &fakeTarget{}
 		tl := &fakeTargetLogs{}
-		rec, resp := doMigrate(t, vl, target, tl, 2)
+		code, resp := doMigrate(t, vl, target, tl, 2)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
 		assertEqual(t, "transferred", resp.Transferred, days)
 		assertEqual(t, "detached", vl.detached, days)
@@ -139,10 +146,10 @@ func TestMigrateHandler(t *testing.T) {
 		target := &fakeTarget{}
 		tl := &fakeTargetLogs{}
 		// nDays=0 -> from is today -> DaysInRange yields no sealed days.
-		rec, resp := doMigrate(t, vl, target, tl, 0)
+		code, resp := doMigrate(t, vl, target, tl, 0)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
 		if len(resp.Transferred) != 0 {
 			t.Errorf("transferred = %v, want none", resp.Transferred)
@@ -154,9 +161,9 @@ func TestMigrateHandler(t *testing.T) {
 
 	t.Run("source query failure yields 500 with export error", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), queryFail: true}
-		rec, resp := doMigrate(t, vl, &fakeTarget{}, &fakeTargetLogs{}, 0)
-		if rec.Code != http.StatusInternalServerError {
-			t.Fatalf("status = %d, want 500", rec.Code)
+		code, resp := doMigrate(t, vl, &fakeTarget{}, &fakeTargetLogs{}, 0)
+		if code != http.StatusInternalServerError {
+			t.Fatalf("job code = %d, want 500", code)
 		}
 		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: export") {
 			t.Errorf("errors = %v, want one recent: export", resp.Errors)
@@ -166,9 +173,9 @@ func TestMigrateHandler(t *testing.T) {
 	t.Run("ingest failure yields 500 with ingest error", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), recentLines: 4}
 		tl := &fakeTargetLogs{ingestFail: true}
-		rec, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
-		if rec.Code != http.StatusInternalServerError {
-			t.Fatalf("status = %d, want 500", rec.Code)
+		code, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
+		if code != http.StatusInternalServerError {
+			t.Fatalf("job code = %d, want 500", code)
 		}
 		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: ingest") {
 			t.Errorf("errors = %v, want one recent: ingest", resp.Errors)
@@ -179,9 +186,9 @@ func TestMigrateHandler(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), recentLines: 10}
 		zero := 0
 		tl := &fakeTargetLogs{countOverride: &zero}
-		rec, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
-		if rec.Code != http.StatusOK {
-			t.Fatalf("status = %d, want 200 (mismatch is advisory), body %s", rec.Code, rec.Body.String())
+		code, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
+		if code != http.StatusOK {
+			t.Fatalf("job code = %d, want 200 (mismatch is advisory), errors %v", code, resp.Errors)
 		}
 		if resp.Recent == nil || resp.Recent.Verified {
 			t.Errorf("recent = %+v, want not verified", resp.Recent)
@@ -197,9 +204,9 @@ func TestMigrateHandler(t *testing.T) {
 	t.Run("verify query failure yields 500", func(t *testing.T) {
 		vl := &fakeVL{snapshotDir: makeSnapshotDir(t), recentLines: 4}
 		tl := &fakeTargetLogs{selectFail: true}
-		rec, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
-		if rec.Code != http.StatusInternalServerError {
-			t.Fatalf("status = %d, want 500", rec.Code)
+		code, resp := doMigrate(t, vl, &fakeTarget{}, tl, 0)
+		if code != http.StatusInternalServerError {
+			t.Fatalf("job code = %d, want 500", code)
 		}
 		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: verify_target") {
 			t.Errorf("errors = %v, want one recent: verify_target", resp.Errors)

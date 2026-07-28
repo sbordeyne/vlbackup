@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,45 @@ import (
 const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
+
+// Defines values for JobStatusKind.
+const (
+	Migrate  JobStatusKind = "migrate"
+	Transfer JobStatusKind = "transfer"
+)
+
+// Valid indicates whether the value is a known member of the JobStatusKind enum.
+func (e JobStatusKind) Valid() bool {
+	switch e {
+	case Migrate:
+		return true
+	case Transfer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for JobStatusState.
+const (
+	Failed    JobStatusState = "failed"
+	Running   JobStatusState = "running"
+	Succeeded JobStatusState = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the JobStatusState enum.
+func (e JobStatusState) Valid() bool {
+	switch e {
+	case Failed:
+		return true
+	case Running:
+		return true
+	case Succeeded:
+		return true
+	default:
+		return false
+	}
+}
 
 // AttachResponse The outcome of attaching a partition.
 type AttachResponse struct {
@@ -40,6 +80,48 @@ type ErrorResponse struct {
 	// Error Error message describing the issue
 	Error *string `json:"error,omitempty"`
 }
+
+// JobRef A reference to a background job started by the transfer or migrate endpoints.
+type JobRef struct {
+	// JobId Identifier of the started job
+	JobId string `json:"job_id"`
+
+	// StatusUrl Relative URL to poll for the job's status
+	StatusUrl string `json:"status_url"`
+}
+
+// JobStatus The current state of a background transfer or migrate job.
+type JobStatus struct {
+	// Error A setup error that prevented the job from producing a per-day outcome, e.g. the source VictoriaLogs client could not be created
+	Error *string `json:"error,omitempty"`
+
+	// FinishedAt When the job reached a terminal state, as an RFC3339 timestamp; absent while the job is still running
+	FinishedAt *time.Time `json:"finished_at,omitempty"`
+
+	// JobId Identifier of the job
+	JobId string `json:"job_id"`
+
+	// Kind Which operation the job runs
+	Kind JobStatusKind `json:"kind"`
+
+	// Migrate The per-day and recent outcome, present once a migrate job has finished
+	Migrate *MigrateResponse `json:"migrate,omitempty"`
+
+	// StartedAt When the job started, as an RFC3339 timestamp
+	StartedAt time.Time `json:"started_at"`
+
+	// State Lifecycle state of the job; terminal states are succeeded and failed
+	State JobStatusState `json:"state"`
+
+	// Transfer The per-day outcome, present once a transfer job has finished
+	Transfer *TransferResponse `json:"transfer,omitempty"`
+}
+
+// JobStatusKind Which operation the job runs
+type JobStatusKind string
+
+// JobStatusState Lifecycle state of the job; terminal states are succeeded and failed
+type JobStatusState string
 
 // MigrateRequest Parameters for a migrate request.
 type MigrateRequest struct {
@@ -158,6 +240,9 @@ type TransferResponse struct {
 	Transferred []string `json:"transferred"`
 }
 
+// JobIdPathParam defines model for JobIdPathParam.
+type JobIdPathParam = string
+
 // PartitionQueryParam defines model for PartitionQueryParam.
 type PartitionQueryParam = string
 
@@ -190,6 +275,9 @@ type TransferPartitionsJSONRequestBody = TransferRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get the status of a transfer or migrate job
+	// (GET /v1/vlbackup/jobs/{job_id})
+	GetJob(w http.ResponseWriter, r *http.Request, jobId JobIdPathParam)
 	// Migrate partitions and recent data to another vlbackup instance
 	// (POST /v1/vlbackup/migrate)
 	MigratePartitions(w http.ResponseWriter, r *http.Request)
@@ -213,6 +301,12 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// Get the status of a transfer or migrate job
+// (GET /v1/vlbackup/jobs/{job_id})
+func (_ Unimplemented) GetJob(w http.ResponseWriter, r *http.Request, jobId JobIdPathParam) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Migrate partitions and recent data to another vlbackup instance
 // (POST /v1/vlbackup/migrate)
@@ -258,6 +352,32 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetJob operation middleware
+func (siw *ServerInterfaceWrapper) GetJob(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "job_id" -------------
+	var jobId JobIdPathParam
+
+	err = runtime.BindStyledParameterWithOptions("simple", "job_id", chi.URLParam(r, "job_id"), &jobId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "job_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetJob(w, r, jobId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // MigratePartitions operation middleware
 func (siw *ServerInterfaceWrapper) MigratePartitions(w http.ResponseWriter, r *http.Request) {
@@ -507,6 +627,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1/vlbackup/jobs/{job_id}", wrapper.GetJob)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/vlbackup/migrate", wrapper.MigratePartitions)
 	})
 	r.Group(func(r chi.Router) {
@@ -528,6 +651,42 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type GetJobRequestObject struct {
+	JobId JobIdPathParam `json:"job_id"`
+}
+
+type GetJobResponseObject interface {
+	VisitGetJobResponse(w http.ResponseWriter) error
+}
+
+type GetJob200JSONResponse JobStatus
+
+func (response GetJob200JSONResponse) VisitGetJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetJob404JSONResponse ErrorResponse
+
+func (response GetJob404JSONResponse) VisitGetJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MigratePartitionsRequestObject struct {
 	Body *MigratePartitionsJSONRequestBody
 }
@@ -536,16 +695,16 @@ type MigratePartitionsResponseObject interface {
 	VisitMigratePartitionsResponse(w http.ResponseWriter) error
 }
 
-type MigratePartitions200JSONResponse MigrateResponse
+type MigratePartitions202JSONResponse JobRef
 
-func (response MigratePartitions200JSONResponse) VisitMigratePartitionsResponse(w http.ResponseWriter) error {
+func (response MigratePartitions202JSONResponse) VisitMigratePartitionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(202)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -564,16 +723,16 @@ func (response MigratePartitions400JSONResponse) VisitMigratePartitionsResponse(
 	return err
 }
 
-type MigratePartitions500JSONResponse MigrateResponse
+type MigratePartitions409JSONResponse ErrorResponse
 
-func (response MigratePartitions500JSONResponse) VisitMigratePartitionsResponse(w http.ResponseWriter) error {
+func (response MigratePartitions409JSONResponse) VisitMigratePartitionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -708,16 +867,16 @@ type TransferPartitionsResponseObject interface {
 	VisitTransferPartitionsResponse(w http.ResponseWriter) error
 }
 
-type TransferPartitions200JSONResponse TransferResponse
+type TransferPartitions202JSONResponse JobRef
 
-func (response TransferPartitions200JSONResponse) VisitTransferPartitionsResponse(w http.ResponseWriter) error {
+func (response TransferPartitions202JSONResponse) VisitTransferPartitionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(202)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -736,16 +895,16 @@ func (response TransferPartitions400JSONResponse) VisitTransferPartitionsRespons
 	return err
 }
 
-type TransferPartitions500JSONResponse TransferResponse
+type TransferPartitions409JSONResponse ErrorResponse
 
-func (response TransferPartitions500JSONResponse) VisitTransferPartitionsResponse(w http.ResponseWriter) error {
+func (response TransferPartitions409JSONResponse) VisitTransferPartitionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -895,6 +1054,9 @@ func (response ReceiveSnapshot500JSONResponse) VisitReceiveSnapshotResponse(w ht
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Get the status of a transfer or migrate job
+	// (GET /v1/vlbackup/jobs/{job_id})
+	GetJob(ctx context.Context, request GetJobRequestObject) (GetJobResponseObject, error)
 	// Migrate partitions and recent data to another vlbackup instance
 	// (POST /v1/vlbackup/migrate)
 	MigratePartitions(ctx context.Context, request MigratePartitionsRequestObject) (MigratePartitionsResponseObject, error)
@@ -942,6 +1104,32 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetJob operation middleware
+func (sh *strictHandler) GetJob(w http.ResponseWriter, r *http.Request, jobId JobIdPathParam) {
+	var request GetJobRequestObject
+
+	request.JobId = jobId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetJob(ctx, request.(GetJobRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetJob")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetJobResponseObject); ok {
+		if err := validResponse.VisitGetJobResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // MigratePartitions operation middleware
@@ -1127,65 +1315,78 @@ func (sh *strictHandler) ReceiveSnapshot(w http.ResponseWriter, r *http.Request,
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"nUa45dOqI4s+6PXF9f8FAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

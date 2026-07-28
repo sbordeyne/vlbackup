@@ -33,18 +33,25 @@ func muteStdout(t *testing.T, f func()) {
 
 func okServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	const jobID = "0123456789abcdef0123456789abcdef"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/v1/vlbackup/snapshot":
+		switch {
+		case r.URL.Path == "/v1/vlbackup/snapshot":
 			w.WriteHeader(202)
-		case "/v1/vlbackup/restore":
+		case r.URL.Path == "/v1/vlbackup/restore":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(202)
 			_, _ = io.WriteString(w, `{"partition":["20240115"],"bytes_written":1}`)
-		default:
+		case strings.HasPrefix(r.URL.Path, "/v1/vlbackup/jobs/"):
+			// Poll of an already-terminal transfer/migrate job.
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
-			_, _ = io.WriteString(w, `{"transferred":[],"skipped":[],"errors":[]}`)
+			_, _ = io.WriteString(w, `{"job_id":"`+jobID+`","kind":"transfer","state":"succeeded","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":[],"skipped":[],"errors":[]},"migrate":{"transferred":[],"skipped":[],"errors":[]}}`)
+		default:
+			// transfer/migrate start: accept and hand back a job ref.
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(202)
+			_, _ = io.WriteString(w, `{"job_id":"`+jobID+`","status_url":"/v1/vlbackup/jobs/`+jobID+`"}`)
 		}
 	}))
 	t.Cleanup(srv.Close)

@@ -18,6 +18,8 @@ sequenceDiagram
     participant TgtVL as VictoriaLogs (target)
 
     Cron->>Src: POST /v1/vlbackup/transfer
+    Src-->>Cron: 202 {job_id, status_url}
+    Note over Cron,Src: Cron polls GET /v1/vlbackup/jobs/{job_id}
     loop each sealed day in range
         Src->>SrcVL: create snapshot
         Src->>Tgt: POST /v1/vlbackup/transfer/receive (tar.gz stream)
@@ -28,7 +30,7 @@ sequenceDiagram
         Src->>Tgt: POST /v1/vlbackup/transfer/attach
         Tgt->>TgtVL: attach partition
     end
-    Src-->>Cron: {transferred, skipped, errors}
+    Src-->>Cron: job succeeded/failed {transferred, skipped, errors}
 ```
 
 ## Range semantics
@@ -42,7 +44,7 @@ sequenceDiagram
 
 If a partition already exists on the target, that day is **skipped**: the target returns `409 Conflict`, the source leaves its own data untouched, and the transfer continues with the next day. The day appears in the `skipped` list of the response.
 
-Any other error aborts the remaining days and is reported in `errors` with a `500` status.
+Any other error aborts the remaining days, is reported in the job's `errors`, and marks the job `failed`.
 
 ## Crash recovery
 

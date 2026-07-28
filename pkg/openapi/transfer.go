@@ -39,6 +39,12 @@ func ParseTimeRange(rng TimeRange, now time.Time) (from, to time.Time, err error
 // in the requested range it snapshots the local partition, streams it to the
 // target vlbackup, detaches it locally, cleans up the snapshot, and asks the
 // target to attach it. Any hard error aborts the remaining days.
+//
+// The request is only validated synchronously; the transfer itself runs in a
+// background job (202 + a status URL). A transfer streams multi-GB bodies and
+// can run for minutes or longer, far outliving the client that triggered it —
+// running it inline let the caller's disconnect cancel the request context and
+// abort an in-flight upload ("context canceled"). See runTransfer.
 func (s *Server) TransferPartitions(ctx context.Context, request TransferPartitionsRequestObject) (TransferPartitionsResponseObject, error) {
 	now := time.Now()
 	from, to, err := ParseTimeRange(request.Body.Range, now)
@@ -53,16 +59,27 @@ func (s *Server) TransferPartitions(ctx context.Context, request TransferPartiti
 	if err != nil {
 		return TransferPartitions400JSONResponse(errorResponse(err, 400)), nil
 	}
+
+	job := s.jobs.Start(Transfer)
+	if job == nil {
+		return TransferPartitions409JSONResponse(errorResponse(errActiveJob, 409)), nil
+	}
+	// Detach from the request context so the caller disconnecting does not abort
+	// the transfer; the run reports its outcome through the job store instead.
+	go s.runTransfer(context.WithoutCancel(ctx), job.ID, peer, days)
+	return TransferPartitions202JSONResponse(jobRef(job)), nil
+}
+
+// runTransfer is the background body of a transfer job: it builds the source VL
+// client and moves each sealed day, recording the outcome on the job.
+func (s *Server) runTransfer(ctx context.Context, jobID string, peer *transfer.PeerClient, days []string) {
+	defer s.recoverJob(jobID, "transfer")
 	vmClient, err := victoriametrics.NewClient(ctx, s.args.VictoriaLogsURL.String())
 	if err != nil {
-		return TransferPartitions500JSONResponse{Transferred: []string{}, Skipped: []string{}, Errors: []string{err.Error()}}, nil
+		s.jobs.Fail(jobID, err)
+		return
 	}
-
-	resp := s.transferSealedDays(ctx, peer, vmClient, days)
-	if len(resp.Errors) > 0 {
-		return TransferPartitions500JSONResponse(resp), nil
-	}
-	return TransferPartitions200JSONResponse(resp), nil
+	s.jobs.CompleteTransfer(jobID, s.transferSealedDays(ctx, peer, vmClient, days))
 }
 
 // transferSealedDays moves each sealed day's partition to the target vlbackup:
