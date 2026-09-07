@@ -3,7 +3,7 @@ module github.com/sbordeyne/vlbackup
 go 1.26.4
 
 require (
-	cloud.google.com/go/storage v1.64.0
+	cloud.google.com/go/storage v1.67.0
 	github.com/alexflint/go-arg v1.6.1
 	github.com/getkin/kin-openapi v0.147.0
 	github.com/go-chi/chi/v5 v5.3.2
