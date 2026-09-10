@@ -165,7 +165,7 @@ func TestMigrateHandler(t *testing.T) {
 		if code != http.StatusInternalServerError {
 			t.Fatalf("job code = %d, want 500", code)
 		}
-		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: export") {
+		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0].Reason, "recent: export") {
 			t.Errorf("errors = %v, want one recent: export", resp.Errors)
 		}
 	})
@@ -177,7 +177,7 @@ func TestMigrateHandler(t *testing.T) {
 		if code != http.StatusInternalServerError {
 			t.Fatalf("job code = %d, want 500", code)
 		}
-		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: ingest") {
+		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0].Reason, "recent: ingest") {
 			t.Errorf("errors = %v, want one recent: ingest", resp.Errors)
 		}
 	})
@@ -208,7 +208,7 @@ func TestMigrateHandler(t *testing.T) {
 		if code != http.StatusInternalServerError {
 			t.Fatalf("job code = %d, want 500", code)
 		}
-		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0], "recent: verify_target") {
+		if len(resp.Errors) != 1 || !strings.Contains(resp.Errors[0].Reason, "recent: verify_target") {
 			t.Errorf("errors = %v, want one recent: verify_target", resp.Errors)
 		}
 	})

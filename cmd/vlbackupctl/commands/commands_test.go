@@ -172,7 +172,7 @@ func TestTransferRun(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ok text", func(t *testing.T) {
-		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"succeeded","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":["20240113"],"skipped":["20240112"],"errors":[]}}`, nil))
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"succeeded","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":["20240113"],"skipped":[{"partition":"20240112","reason":"no partition on the source for this day"}],"errors":[]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{Output: "text"}) })
 		if err != nil || !strings.Contains(out, "20240113") {
@@ -218,7 +218,7 @@ func TestTransferRun(t *testing.T) {
 	})
 
 	t.Run("job failed with per-day errors", func(t *testing.T) {
-		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"failed","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":[],"skipped":[],"errors":["20240112: boom"]}}`, nil))
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"transfer","state":"failed","started_at":"2024-01-15T08:00:00Z","transfer":{"transferred":[],"skipped":[],"errors":[{"partition":"20240112","reason":"boom"}]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{}) })
 		if err == nil || !strings.Contains(err.Error(), "errors") {
@@ -348,7 +348,7 @@ func TestMigrateRun(t *testing.T) {
 	})
 
 	t.Run("job failed with recent error", func(t *testing.T) {
-		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"migrate","state":"failed","started_at":"2024-01-15T08:00:00Z","migrate":{"transferred":[],"skipped":[],"errors":["recent phase failed"]}}`, nil))
+		c, _ := newClient(t, jobHandler(`{"job_id":"`+testJobID+`","kind":"migrate","state":"failed","started_at":"2024-01-15T08:00:00Z","migrate":{"transferred":[],"skipped":[],"errors":[{"partition":"20240115","reason":"recent phase failed"}]}}`, nil))
 		var err error
 		out := capture(t, func() { err = cmd.Run(ctx, c, Options{}) })
 		if err == nil || !strings.Contains(out, "recent phase failed") {
