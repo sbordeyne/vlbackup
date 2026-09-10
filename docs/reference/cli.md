@@ -63,7 +63,7 @@ vlbackupctl --url http://victorialogs:8080 transfer \
 
 ```text
 transferred: [20240113 20240114]
-skipped:     [20240112]
+skipped:     [20240112: no partition on the source for this day]
 errors:      []
 ```
 
@@ -91,7 +91,7 @@ vlbackupctl --url http://victorialogs:8080 migrate \
 
 ```text
 transferred: [20240113 20240114]
-skipped:     [20240112]
+skipped:     [20240112: no partition on the source for this day]
 errors:      []
 recent:      partition=20240115 bytes_ingested=4194304 source_count=1024 target_count=1024 verified=true
 ```
@@ -130,7 +130,7 @@ vlbackupctl --url http://victorialogs:8080 -o json transfer --from now-7d/d --ta
 ```json
 {
   "transferred": ["20240113"],
-  "skipped": ["20240112"],
+  "skipped": [{"partition": "20240112", "reason": "no partition on the source for this day"}],
   "errors": []
 }
 ```

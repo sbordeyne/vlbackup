@@ -138,16 +138,25 @@ type MigrateRequest struct {
 // MigrateResponse The outcome of a migrate request.
 type MigrateResponse struct {
 	// Errors Per-day and recent-phase error messages
-	Errors []string `json:"errors"`
+	Errors []PartitionReason `json:"errors"`
 
 	// Recent The outcome of copying today's (still-open) data
 	Recent *RecentMigration `json:"recent,omitempty"`
 
 	// Skipped Sealed partitions (YYYYMMDD) that were skipped, e.g. missing or already present on the target
-	Skipped []string `json:"skipped"`
+	Skipped []PartitionReason `json:"skipped"`
 
 	// Transferred Sealed partitions (YYYYMMDD) that were successfully moved
 	Transferred []string `json:"transferred"`
+}
+
+// PartitionReason A partition paired with a human-readable reason, used to report why a single day was skipped or failed.
+type PartitionReason struct {
+	// Partition The partition the reason applies to, formatted as YYYYMMDD
+	Partition string `json:"partition"`
+
+	// Reason Human-readable reason why the partition was skipped or failed
+	Reason string `json:"reason"`
 }
 
 // ReceiveResponse The outcome of receiving a partition snapshot.
@@ -225,10 +234,10 @@ type TransferRequest struct {
 // TransferResponse The outcome of a transfer request, per day.
 type TransferResponse struct {
 	// Errors Per-day error messages for partitions that failed to transfer
-	Errors []string `json:"errors"`
+	Errors []PartitionReason `json:"errors"`
 
 	// Skipped Partitions (YYYYMMDD) that were skipped, e.g. missing or already present on the target
-	Skipped []string `json:"skipped"`
+	Skipped []PartitionReason `json:"skipped"`
 
 	// Transferred Partitions (YYYYMMDD) that were successfully transferred
 	Transferred []string `json:"transferred"`

@@ -312,7 +312,7 @@ func TestTransferIntegration(t *testing.T) {
 		if !slices.Contains(resp.Transferred, conflictPartition) {
 			t.Errorf("transferred = %v, want %s included", resp.Transferred, conflictPartition)
 		}
-		if slices.Contains(resp.Skipped, conflictPartition) {
+		if slices.Contains(skippedPartitions(resp.Skipped), conflictPartition) {
 			t.Errorf("skipped = %v, want %s completed not skipped", resp.Skipped, conflictPartition)
 		}
 		// Conflict day must be detached from the source (target keeps its copy),

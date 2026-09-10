@@ -122,14 +122,14 @@ func (s *Server) runMigrate(ctx context.Context, jobID string, m migrateParams) 
 // the target, then verifies row counts on both sides. Errors are appended to
 // errs; the returned RecentMigration is always non-nil and holds whatever was
 // established before any failure.
-func (s *Server) migrateRecent(source, insert, sel victoriametrics.Client, now time.Time, targetAuthKey string, errs *[]string) *RecentMigration {
+func (s *Server) migrateRecent(source, insert, sel victoriametrics.Client, now time.Time, targetAuthKey string, errs *[]PartitionReason) *RecentMigration {
 	today := transfer.TruncateUTC(now)
 	query := "_time:>=" + today.Format(time.RFC3339)
 	recent := &RecentMigration{Partition: today.Format("20060102")}
 
 	fail := func(stage string, err error) {
 		log.Errorf("migrate recent data failed at %s: %v", stage, err)
-		*errs = append(*errs, fmt.Sprintf("recent: %s: %v", stage, err))
+		*errs = append(*errs, PartitionReason{Partition: recent.Partition, Reason: fmt.Sprintf("recent: %s: %v", stage, err)})
 		s.metrics.TransferCount.WithLabelValues("recent", "error").Inc()
 	}
 

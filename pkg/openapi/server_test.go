@@ -78,6 +78,16 @@ func do(h http.Handler, req *http.Request) *httptest.ResponseRecorder {
 	return rec
 }
 
+// skippedPartitions reduces per-day skip/error entries to their partitions, so
+// tests can assert on days without pinning the reason text.
+func skippedPartitions(entries []openapi.PartitionReason) []string {
+	days := make([]string, 0, len(entries))
+	for _, e := range entries {
+		days = append(days, e.Partition)
+	}
+	return days
+}
+
 func assertEqual(t *testing.T, label string, got, want []string) {
 	t.Helper()
 	if len(got) != len(want) {

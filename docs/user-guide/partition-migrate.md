@@ -63,7 +63,7 @@ the transfer response plus a `recent` object:
 ```json
 {
   "transferred": ["20240113", "20240114"],
-  "skipped": ["20240112"],
+  "skipped": [{"partition": "20240112", "reason": "no partition on the source for this day"}],
   "errors": [],
   "recent": {
     "partition": "20240115",

@@ -91,10 +91,10 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 		s.metrics.TransferDuration.WithLabelValues(partition, stage).Observe(time.Since(start).Seconds())
 	}
 
-	resp := TransferResponse{Transferred: []string{}, Skipped: []string{}, Errors: []string{}}
+	resp := TransferResponse{Transferred: []string{}, Skipped: []PartitionReason{}, Errors: []PartitionReason{}}
 	fail := func(day, stage string, err error) {
 		log.Errorf("transfer of %s failed at %s: %v", day, stage, err)
-		resp.Errors = append(resp.Errors, fmt.Sprintf("%s: %s: %v", day, stage, err))
+		resp.Errors = append(resp.Errors, PartitionReason{Partition: day, Reason: fmt.Sprintf("%s: %v", stage, err)})
 		s.metrics.TransferCount.WithLabelValues(day, "error").Inc()
 	}
 
@@ -117,7 +117,7 @@ func (s *Server) transferSealedDays(ctx context.Context, peer *transfer.PeerClie
 			// only skip — an already-present target partition is completed
 			// below, not skipped, so an interrupted run resumes.)
 			log.Infof("No partition for day %s, skipping", day)
-			resp.Skipped = append(resp.Skipped, day)
+			resp.Skipped = append(resp.Skipped, PartitionReason{Partition: day, Reason: "no partition on the source for this day"})
 			s.metrics.TransferCount.WithLabelValues(day, "skipped").Inc()
 			continue
 		}

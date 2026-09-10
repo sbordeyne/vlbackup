@@ -60,8 +60,8 @@ func printMigrate(r *client.MigrateResponse) {
 		return
 	}
 	fmt.Printf("transferred: %v\n", r.Transferred)
-	fmt.Printf("skipped:     %v\n", r.Skipped)
-	fmt.Printf("errors:      %v\n", r.Errors)
+	fmt.Printf("skipped:     %v\n", formatReasons(r.Skipped))
+	fmt.Printf("errors:      %v\n", formatReasons(r.Errors))
 	if r.Recent != nil {
 		fmt.Printf("recent:      partition=%s bytes_ingested=%d source_count=%d target_count=%d verified=%t\n",
 			r.Recent.Partition, r.Recent.BytesIngested, r.Recent.SourceCount,

@@ -300,7 +300,9 @@ func TestTransferHandler(t *testing.T) {
 		if code != http.StatusOK {
 			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
-		assertEqual(t, "skipped", resp.Skipped, []string{})
+		if len(resp.Skipped) != 0 {
+			t.Errorf("skipped = %v, want none", resp.Skipped)
+		}
 		assertEqual(t, "transferred", resp.Transferred, days)
 		assertEqual(t, "detached", vl.detached, days)     // conflict day detached too
 		assertEqual(t, "attached", target.attached, days) // and attached on the target
@@ -318,7 +320,7 @@ func TestTransferHandler(t *testing.T) {
 		if code != http.StatusOK {
 			t.Fatalf("job code = %d, errors %v", code, resp.Errors)
 		}
-		assertEqual(t, "skipped", resp.Skipped, days[:1])
+		assertEqual(t, "skipped", skippedPartitions(resp.Skipped), days[:1])
 		assertEqual(t, "transferred", resp.Transferred, days[1:])
 	})
 

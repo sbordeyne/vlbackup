@@ -50,6 +50,16 @@ func printTransfer(r *client.TransferResponse) {
 		return
 	}
 	fmt.Printf("transferred: %v\n", r.Transferred)
-	fmt.Printf("skipped:     %v\n", r.Skipped)
-	fmt.Printf("errors:      %v\n", r.Errors)
+	fmt.Printf("skipped:     %v\n", formatReasons(r.Skipped))
+	fmt.Printf("errors:      %v\n", formatReasons(r.Errors))
+}
+
+// formatReasons renders per-day skip/error entries as "partition: reason", so
+// the reason is readable instead of Go's struct formatting.
+func formatReasons(entries []client.PartitionReason) []string {
+	out := make([]string, 0, len(entries))
+	for _, e := range entries {
+		out = append(out, fmt.Sprintf("%s: %s", e.Partition, e.Reason))
+	}
+	return out
 }

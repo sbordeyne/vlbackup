@@ -223,6 +223,10 @@ returned from those endpoints.
 | `migrate`     | The `MigrateResponse` outcome, present once a finished job's `kind` is `migrate`.   |
 | `error`       | A setup error that stopped the job before any per-day outcome (e.g. the source VL client could not be created). |
 
+`skipped` and `errors` in both outcomes are lists of `PartitionReason` objects
+(`{"partition": "20260701", "reason": "..."}`), so each entry says which day it
+concerns and why.
+
 A job ends `failed` when it hit a setup error **or** any per-day/recent error;
 otherwise `succeeded`. `404` is returned for an unknown id (jobs are in-memory
 and lost on restart).

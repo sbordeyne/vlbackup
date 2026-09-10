@@ -178,7 +178,8 @@ paths:
                     - '20240113'
                     - '20240114'
                   skipped:
-                    - '20240112'
+                    - partition: '20240112'
+                      reason: no partition on the source for this day
                   errors: []
         '404':
           description: No job exists with the given id
@@ -434,6 +435,28 @@ components:
             (e.g. `now/d`, `2024-01-15T00:00:00Z`). Defaults to now.
           pattern: ^(now|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))(\|\|)?([+-]\d+[yMwdhms])?(/[yMwdhms])?$
           example: now/d
+    PartitionReason:
+      type: object
+      description: A partition paired with a human-readable reason, used to report
+        why a single day was skipped or failed.
+      required:
+        - partition
+        - reason
+      properties:
+        partition:
+          type: string
+          pattern: ^\d{8}$
+          minLength: 8
+          maxLength: 8
+          description: The partition the reason applies to, formatted as YYYYMMDD
+          example: '20240115'
+        reason:
+          type: string
+          pattern: ^[\s\S]*$
+          minLength: 1
+          maxLength: 4096
+          description: Human-readable reason why the partition was skipped or failed
+          example: already present on the target
     TransferResponse:
       type: object
       description: The outcome of a transfer request, per day.
@@ -459,20 +482,14 @@ components:
           description: Partitions (YYYYMMDD) that were skipped, e.g. missing or already
             present on the target
           items:
-            type: string
-            pattern: ^\d{8}$
-            minLength: 8
-            maxLength: 8
+            $ref: '#/components/schemas/PartitionReason'
         errors:
           type: array
           minItems: 0
           maxItems: 100000
           description: Per-day error messages for partitions that failed to transfer
           items:
-            type: string
-            pattern: ^[\s\S]*$
-            minLength: 1
-            maxLength: 4096
+            $ref: '#/components/schemas/PartitionReason'
     MigrateRequest:
       type: object
       description: Parameters for a migrate request.
@@ -542,20 +559,14 @@ components:
           description: Sealed partitions (YYYYMMDD) that were skipped, e.g. missing
             or already present on the target
           items:
-            type: string
-            pattern: ^\d{8}$
-            minLength: 8
-            maxLength: 8
+            $ref: '#/components/schemas/PartitionReason'
         errors:
           type: array
           minItems: 0
           maxItems: 100000
           description: Per-day and recent-phase error messages
           items:
-            type: string
-            pattern: ^[\s\S]*$
-            minLength: 1
-            maxLength: 4096
+            $ref: '#/components/schemas/PartitionReason'
         recent:
           description: The outcome of copying today's (still-open) data
           allOf:

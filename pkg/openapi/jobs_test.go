@@ -34,7 +34,7 @@ func TestJobStoreStatusTransitions(t *testing.T) {
 	t.Run("clean transfer succeeds", func(t *testing.T) {
 		s := NewJobStore()
 		job := s.Start(Transfer)
-		s.CompleteTransfer(job.ID, TransferResponse{Transferred: []string{"20240101"}, Skipped: []string{}, Errors: []string{}})
+		s.CompleteTransfer(job.ID, TransferResponse{Transferred: []string{"20240101"}, Skipped: []PartitionReason{}, Errors: []PartitionReason{}})
 		status, ok := s.Status(job.ID)
 		if !ok {
 			t.Fatal("Status ok = false, want true")
@@ -53,7 +53,7 @@ func TestJobStoreStatusTransitions(t *testing.T) {
 	t.Run("transfer with per-day errors fails", func(t *testing.T) {
 		s := NewJobStore()
 		job := s.Start(Transfer)
-		s.CompleteTransfer(job.ID, TransferResponse{Errors: []string{"20240101: stream: boom"}})
+		s.CompleteTransfer(job.ID, TransferResponse{Errors: []PartitionReason{{Partition: "20240101", Reason: "stream: boom"}}})
 		status, _ := s.Status(job.ID)
 		if status.State != Failed {
 			t.Errorf("state = %s, want failed (per-day errors present)", status.State)
