@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/timberio/go-datemath v0.1.0
-	google.golang.org/api v0.297.0
+	google.golang.org/api v0.298.0
 )
 
 require (
