@@ -31,3 +31,7 @@ updates:
     labels:
       - component/dependencies
       - lifecycle/automated
+    groups:
+      github-actions:
+        patterns:
+          - '*'
