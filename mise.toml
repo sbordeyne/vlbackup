@@ -32,7 +32,7 @@ tombi = "latest"
 golangci-lint = "v2.13.2"
 "go:github.com/vladopajic/go-test-coverage/v2" = "v2.18.8"
 "aqua:grafana/alloy" = "latest"
-"npm:ibm-openapi-validator" = "latest"
+"npm:ibm-openapi-validator" = { version = "1.38.8", trust_policy_excludes = ["rollup@2.80.0"] }
 "pipx:commitizen" = "latest"
 oapi-codegen = "latest"
 
