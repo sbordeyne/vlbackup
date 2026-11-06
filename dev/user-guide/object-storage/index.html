@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1289,8 +1289,8 @@
 </tbody>
 </table>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;}&#39;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"destination_url": "gs://my-bucket/vlbackup/"}'</span>
 </code></pre></div>
 <h2 id="s3-aws-s3-and-s3-compatible-stores"><code>s3://</code> — AWS S3 and S3-compatible stores<a class="headerlink" href="#s3-aws-s3-and-s3-compatible-stores" title="Permanent link">&para;</a></h2>
 <p>Works with AWS S3, MinIO, Ceph RADOS Gateway, Cloudflare R2, Scaleway, and other S3-compatible endpoints.</p>
@@ -1336,8 +1336,8 @@
 </tbody>
 </table>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/snapshot<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;destination_url&quot;: &quot;s3://my-bucket/backups/&quot;}&#39;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"destination_url": "s3://my-bucket/backups/"}'</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">MinIO / self-hosted endpoints</p>
@@ -1347,8 +1347,8 @@
 <p><code>POST /v1/vlbackup/restore</code> is the inverse of snapshot: it pulls one partition back out of object storage and attaches it to VictoriaLogs. The <code>source_url</code> uses the <strong>same scheme/bucket/prefix model</strong> as <code>destination_url</code> above, so a partition uploaded to <code>gs://my-bucket/vlbackup/</code> is restored from the same URL.</p>
 <p>The object key is resolved as <code>&lt;prefix&gt;/&lt;partition&gt;.tar.gz</code> — exactly the name snapshot wrote — from the <code>partition_prefix</code> (<code>YYYYMMDD</code>) in the request:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sL<span class="w"> </span>-XPOST<span class="w"> </span>http://localhost:8080/v1/vlbackup/restore<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;source_url&quot;: &quot;gs://my-bucket/vlbackup/&quot;, &quot;partition_prefix&quot;: &quot;20260703&quot;}&#39;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"source_url": "gs://my-bucket/vlbackup/", "partition_prefix": "20260703"}'</span>
 </code></pre></div>
 <h3 id="flow">Flow<a class="headerlink" href="#flow" title="Permanent link">&para;</a></h3>
 <pre class="mermaid"><code>sequenceDiagram
@@ -1472,7 +1472,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.tabs", "navigation.instant", "navigation.tracking", "toc.follow", "content.code.copy", "content.tabs.link", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
