@@ -64,6 +64,21 @@ func bodySignals(body string, phrases ...string) bool {
 	return false
 }
 
+// partitionRequest calls a /internal/partition/* endpoint. VictoriaLogs
+// rejects any method other than POST on these endpoints (405 otherwise).
+func (c *Client) partitionRequest(path string, values url.Values, authKey string) (*http.Response, error) {
+	if authKey != "" {
+		values.Add("authKey", authKey)
+	}
+	fullUrl := c.url.JoinPath(path)
+	fullUrl.RawQuery = values.Encode()
+	request, err := http.NewRequestWithContext(c.ctx, http.MethodPost, fullUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(request)
+}
+
 func NewClient(ctx context.Context, baseUrl string) (Client, error) {
 	parsedUrl, err := url.Parse(baseUrl)
 	if err != nil {
@@ -77,16 +92,10 @@ func NewClient(ctx context.Context, baseUrl string) (Client, error) {
 
 func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, error) {
 	values := url.Values{}
-
 	if partitionPrefix != "" {
 		values.Add("partition_prefix", partitionPrefix)
 	}
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(CREATE_SNAPSHOT_PATH)
-	fullUrl.RawQuery = values.Encode()
-	response, err := http.DefaultClient.Get(fullUrl.String())
+	response, err := c.partitionRequest(CREATE_SNAPSHOT_PATH, values, authKey)
 	if err != nil {
 		return nil, err
 	}
@@ -106,16 +115,7 @@ func (c *Client) CreateSnapshot(partitionPrefix, authKey string) ([]string, erro
 func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 	values := url.Values{}
 	values.Add("path", snapshotPath)
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(DELETE_SNAPSHOT_PATH)
-	fullUrl.RawQuery = values.Encode()
-	request, err := http.NewRequestWithContext(c.ctx, "DELETE", fullUrl.String(), nil)
-	if err != nil {
-		return err
-	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.partitionRequest(DELETE_SNAPSHOT_PATH, values, authKey)
 	if err != nil {
 		return err
 	}
@@ -134,16 +134,7 @@ func (c *Client) DeleteSnapshot(snapshotPath, authKey string) error {
 
 func (c *Client) DeleteStaleSnapshots(authKey string) error {
 	values := url.Values{}
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(DELETE_STALE_SNAPSHOT_PATH)
-	fullUrl.RawQuery = values.Encode()
-	request, err := http.NewRequestWithContext(c.ctx, "DELETE", fullUrl.String(), nil)
-	if err != nil {
-		return err
-	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.partitionRequest(DELETE_STALE_SNAPSHOT_PATH, values, authKey)
 	if err != nil {
 		return err
 	}
@@ -157,16 +148,7 @@ func (c *Client) DeleteStaleSnapshots(authKey string) error {
 func (c *Client) DetachPartition(partitionName, authKey string) error {
 	values := url.Values{}
 	values.Add("name", partitionName)
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(DETACH_PARTITION_PATH)
-	fullUrl.RawQuery = values.Encode()
-	request, err := http.NewRequestWithContext(c.ctx, "POST", fullUrl.String(), nil)
-	if err != nil {
-		return err
-	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.partitionRequest(DETACH_PARTITION_PATH, values, authKey)
 	if err != nil {
 		return err
 	}
@@ -186,16 +168,7 @@ func (c *Client) DetachPartition(partitionName, authKey string) error {
 func (c *Client) AttachPartition(partitionName, authKey string) error {
 	values := url.Values{}
 	values.Add("name", partitionName)
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(ATTACH_PARTITION_PATH)
-	fullUrl.RawQuery = values.Encode()
-	request, err := http.NewRequestWithContext(c.ctx, "POST", fullUrl.String(), nil)
-	if err != nil {
-		return err
-	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.partitionRequest(ATTACH_PARTITION_PATH, values, authKey)
 	if err != nil {
 		return err
 	}
@@ -213,12 +186,7 @@ func (c *Client) AttachPartition(partitionName, authKey string) error {
 }
 func (c *Client) ListPartitions(authKey string) ([]string, error) {
 	values := url.Values{}
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(LIST_PARTITIONS_PATH)
-	fullUrl.RawQuery = values.Encode()
-	response, err := http.DefaultClient.Get(fullUrl.String())
+	response, err := c.partitionRequest(LIST_PARTITIONS_PATH, values, authKey)
 	if err != nil {
 		return nil, err
 	}
@@ -237,12 +205,7 @@ func (c *Client) ListPartitions(authKey string) ([]string, error) {
 
 func (c *Client) ListSnapshots(authKey string) ([]string, error) {
 	values := url.Values{}
-	if authKey != "" {
-		values.Add("authKey", authKey)
-	}
-	fullUrl := c.url.JoinPath(LIST_SNAPSHOTS_PATH)
-	fullUrl.RawQuery = values.Encode()
-	response, err := http.DefaultClient.Get(fullUrl.String())
+	response, err := c.partitionRequest(LIST_SNAPSHOTS_PATH, values, authKey)
 	if err != nil {
 		return nil, err
 	}

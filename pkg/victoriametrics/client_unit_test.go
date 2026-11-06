@@ -303,3 +303,33 @@ func TestListSnapshotsUnit(t *testing.T) {
 		}
 	})
 }
+
+// TestPartitionEndpointsUsePOST guards against VictoriaLogs' 405 "Only POST
+// method is allowed" on /internal/partition/* endpoints.
+func TestPartitionEndpointsUsePOST(t *testing.T) {
+	var methods []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		methods = append(methods, r.Method+" "+r.URL.Path)
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(srv.Close)
+	c, err := victoriametrics.NewClient(context.Background(), srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = c.CreateSnapshot("20240101", "")
+	_ = c.DeleteSnapshot("p", "")
+	_ = c.DeleteStaleSnapshots("")
+	_ = c.DetachPartition("20240101", "")
+	_ = c.AttachPartition("20240101", "")
+	_, _ = c.ListPartitions("")
+	_, _ = c.ListSnapshots("")
+	if len(methods) != 7 {
+		t.Fatalf("got %d requests, want 7: %v", len(methods), methods)
+	}
+	for _, m := range methods {
+		if !strings.HasPrefix(m, http.MethodPost+" ") {
+			t.Errorf("request %q, want POST", m)
+		}
+	}
+}
