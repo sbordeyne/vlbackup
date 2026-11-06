@@ -3,7 +3,7 @@ module github.com/sbordeyne/vlbackup
 go 1.27.1
 
 require (
-	cloud.google.com/go/storage v1.67.1
+	cloud.google.com/go/storage v1.70.0
 	github.com/alexflint/go-arg v1.6.1
 	github.com/getkin/kin-openapi v0.152.0
 	github.com/go-chi/chi/v5 v5.3.2
@@ -20,7 +20,7 @@ require (
 require (
 	cel.dev/expr v0.25.3 // indirect
 	cloud.google.com/go v0.123.0 // indirect
-	cloud.google.com/go/auth v0.24.1-0.20261001053825-dbc26066f70a // indirect
+	cloud.google.com/go/auth v0.24.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
