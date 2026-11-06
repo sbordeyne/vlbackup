@@ -19,27 +19,26 @@ import (
 )
 
 const (
-	minioUser     = "minioadmin"
-	minioPassword = "minioadmin"
+	s3User     = "vlbackup"
+	s3Password = "vlbackup-secret"
 )
 
-// startMinIO starts a MinIO container and sets the S3 backend env vars.
+// startS3 starts a RustFS (S3-compatible) container and sets the S3 backend env vars.
 // Returns the endpoint (host:port).
-func startMinIO(t *testing.T) string {
+func startS3(t *testing.T) string {
 	t.Helper()
 	testcontainers.SkipIfProviderIsNotHealthy(t)
 
 	ctx := context.Background()
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "minio/minio:latest",
-			Cmd:   []string{"server", "/data"},
+			Image: "rustfs/rustfs:1.0.4",
 			Env: map[string]string{
-				"MINIO_ROOT_USER":     minioUser,
-				"MINIO_ROOT_PASSWORD": minioPassword,
+				"RUSTFS_ACCESS_KEY": s3User,
+				"RUSTFS_SECRET_KEY": s3Password,
 			},
 			ExposedPorts: []string{"9000/tcp"},
-			WaitingFor: wait.ForHTTP("/minio/health/ready").
+			WaitingFor: wait.ForHTTP("/health").
 				WithPort("9000/tcp").
 				WithStartupTimeout(2 * time.Minute),
 		},
@@ -47,7 +46,7 @@ func startMinIO(t *testing.T) string {
 	})
 	testcontainers.CleanupContainer(t, c)
 	if err != nil {
-		t.Fatalf("failed to start MinIO container: %v", err)
+		t.Fatalf("failed to start RustFS container: %v", err)
 	}
 	endpoint, err := c.PortEndpoint(ctx, "9000/tcp", "")
 	if err != nil {
@@ -56,15 +55,15 @@ func startMinIO(t *testing.T) string {
 
 	t.Setenv("S3_ENDPOINT", endpoint)
 	t.Setenv("S3_USE_SSL", "false")
-	t.Setenv("AWS_ACCESS_KEY_ID", minioUser)
-	t.Setenv("AWS_SECRET_ACCESS_KEY", minioPassword)
+	t.Setenv("AWS_ACCESS_KEY_ID", s3User)
+	t.Setenv("AWS_SECRET_ACCESS_KEY", s3Password)
 	return endpoint
 }
 
-func createMinIOBucket(t *testing.T, endpoint, bucket string) {
+func createS3Bucket(t *testing.T, endpoint, bucket string) {
 	t.Helper()
 	client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(minioUser, minioPassword, ""),
+		Creds:  credentials.NewStaticV4(s3User, s3Password, ""),
 		Secure: false,
 	})
 	if err != nil {
@@ -79,8 +78,8 @@ func TestS3Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	endpoint := startMinIO(t)
-	createMinIOBucket(t, endpoint, "test-bucket")
+	endpoint := startS3(t)
+	createS3Bucket(t, endpoint, "test-bucket")
 	ctx := context.Background()
 
 	repo, prefix, err := objstore.Open(ctx, "s3://test-bucket/backups/")
